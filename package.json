@@ -1,0 +1,27 @@
+{
+    "name": "ha-matter-bridge",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "start": "ts-node ./src/index.ts"
+    },
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "@project-chip/matter-node.js": "^0.7.4",
+        "@project-chip/matter.js-tools": "^0.7.4",
+        "@types/node": "18.18",
+        "crypto-js": "^4.2.0",
+        "homeassistant-ws": "^0.2.2",
+        "ws": "^8.16.0"
+    },
+    "devDependencies": {
+        "@types/crypto-js": "^4.2.2",
+        "@types/ws": "^8.5.10",
+        "@typescript-eslint/eslint-plugin": "^6.19.1",
+        "@typescript-eslint/parser": "^6.19.1",
+        "eslint": "^8.56.0",
+        "typescript": "^5.3.3"
+    }
+}

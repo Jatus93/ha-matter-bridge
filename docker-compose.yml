@@ -1,0 +1,11 @@
+version: '3'
+services:
+  ha-bridge:
+    build: .
+    environment:
+      - HA_HOST=${HA_HOST}
+      - HA_PORT=${HA_PORT}
+      - HA_ACCESS_TOKEN=${HA_ACCESS_TOKEN}
+    volumes:
+      - ./deviceData:/app/deviceData:rw
+    network_mode: host
