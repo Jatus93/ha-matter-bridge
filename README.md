@@ -30,6 +30,7 @@ Once the `.env` file is configured, run the project with `docker-compose up` for
 
 1. Help organize the project and dependencies.
 2. Add integrations for other devices.
+3. Add some tests 
 
 ## Known Issues and Limitations
 

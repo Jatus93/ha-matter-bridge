@@ -1,5 +1,5 @@
 import { Logger } from '@project-chip/matter-node.js/log';
-import { HassEntity, HassEvent } from './HAssTypes';
+import { HassEntity, StateChangedEvent } from './HAssTypes';
 import hass, { HassApi, HassWsOptions } from 'homeassistant-ws';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -12,7 +12,7 @@ export class HAMiddleware {
     private requestFulfilled: boolean = true;
     private entities: { [k: string]: HassEntity } = {};
     private functionsToCallOnChange: {
-        [k: string]: ((data: HassEvent['data']) => void) | undefined;
+        [k: string]: ((data: StateChangedEvent) => void) | undefined;
     } = {};
 
     async waitCompletition(): Promise<void> {
@@ -34,17 +34,17 @@ export class HAMiddleware {
     }
 
     subscribe() {
-        this.hassClient.on('state_changed', (stateChangedEvent) => {
-            this.logger.debug(stateChangedEvent.data);
+        this.hassClient.on('state_changed', (event) => {
+            this.logger.debug(event);
             const toDo =
-                this.functionsToCallOnChange[stateChangedEvent.data.entity_id];
+                this.functionsToCallOnChange[event.data.entity_id];
             if (toDo) {
-                toDo(stateChangedEvent.data);
+                toDo(event.data);
             }
         });
     }
 
-    subscrieToDevice(deviceId: string, fn: (data: HassEvent['data']) => void) {
+    subscrieToDevice(deviceId: string, fn: (event: StateChangedEvent) => void) {
         this.functionsToCallOnChange[deviceId] = fn;
         this.logger.debug(this.functionsToCallOnChange);
     }

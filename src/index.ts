@@ -1,4 +1,4 @@
-import { Bridge, HAMiddleware, addAllDevicesToBridge } from './matter/devices';
+import { Bridge, HAMiddleware, addAllDevicesToBridge } from './matter';
 import { serverSetup } from './matter/server';
 import { Logger } from '@project-chip/matter-node.js/log';
 
