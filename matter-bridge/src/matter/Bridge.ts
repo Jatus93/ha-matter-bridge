@@ -10,7 +10,7 @@ import {
 } from '@project-chip/matter-node.js/device';
 import { Logger } from '@project-chip/matter-node.js/log';
 import { StorageManager } from '@project-chip/matter-node.js/storage';
-import { getIntParameter, getParameter } from '../../utils/utils';
+import { getIntParameter, getParameter } from '../utils/utils';
 import { Time } from '@project-chip/matter-node.js/time';
 import { VendorId } from '@project-chip/matter-node.js/datatype';
 import { QrCode } from '@project-chip/matter-node.js/schema';
@@ -24,14 +24,16 @@ export class Bridge {
         getParameter('name') || 'Matter Bridge';
     private static readonly deviceType = DeviceTypes.AGGREGATOR.code;
     private static readonly vendorName = getParameter('vendor') || 'Jatus';
-    private static readonly productName = 'node-matter OnOff-Bridge';
+    private static readonly productName = 'HomeAssistant';
     private static readonly port = getIntParameter('port') ?? 5540;
+    private ready = false;
 
     private matterServer: MatterServer;
     private static instace: Bridge;
     private logger = new Logger('bridge');
     private storageManager: StorageManager;
     private aggregator: Aggregator;
+    private commissioningServer: CommissioningServer | undefined;
 
     private constructor(
         matterServer: MatterServer,
@@ -106,20 +108,22 @@ export class Bridge {
             typeof BridgedDeviceBasicInformationCluster.attributes
         >
     ) {
-        // const id = getIntParameter('uniqueid');
+        if (!this.commissioningServer?.isCommissioned()) {
+            this.logger.warn('System not initialized, may cause crashes');
+        }
         this.aggregator.addBridgedDevice(device, bridgedBasicInformation);
     }
 
     async start() {
         this.logger.info('Starting...');
-        const commissioningServer =
+        this.commissioningServer =
             await this.setupContextAndCommissioningServer();
-        commissioningServer.addDevice(this.aggregator);
-        this.matterServer.addCommissioningServer(commissioningServer);
+        this.commissioningServer.addDevice(this.aggregator);
+        this.matterServer.addCommissioningServer(this.commissioningServer);
         await this.matterServer.start();
         this.logger.info('Listening');
-        if (!commissioningServer.isCommissioned()) {
-            const pairingData = commissioningServer.getPairingCode();
+        if (!this.commissioningServer.isCommissioned()) {
+            const pairingData = this.commissioningServer.getPairingCode();
             const { qrPairingCode, manualPairingCode } = pairingData;
 
             console.log(QrCode.get(qrPairingCode));
@@ -136,5 +140,9 @@ export class Bridge {
 
     async stop() {
         this.matterServer.close();
+        this.storageManager
+            .close()
+            .then(() => process.exit(0))
+            .catch((err) => this.logger.error(err));
     }
 }

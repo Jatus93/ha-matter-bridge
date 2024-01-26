@@ -1,11 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { addDimmerableLightDevice, addOnOffLightDevice } from './devices/lights';
-import { HassEntity } from '../HA/HAssTypes';
-import { Bridge, HAMiddleware } from '.';
+import {
+    addDimmerableLightDevice,
+    addOnOffLightDevice,
+} from './devices/lights';
+import { HassEntity } from '../home-assistant/HAssTypes';
+import { Bridge } from '../matter';
 import { Logger } from '@project-chip/matter-node.js/log';
+import { HAMiddleware } from '../home-assistant/HAmiddleware';
 
 const LOGGER = new Logger('Mapper');
-
 
 const lightsMap: Map<
     string,

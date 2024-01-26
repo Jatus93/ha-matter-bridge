@@ -2,6 +2,7 @@ import { ValidationError } from '@project-chip/matter.js/common';
 import { execSync } from 'child_process';
 
 const envVar = process.env;
+console.debug({ envVar });
 
 export function getParameter(name: string) {
     return envVar[name];

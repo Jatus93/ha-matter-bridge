@@ -4,6 +4,8 @@ import {
     StorageManager,
 } from '@project-chip/matter-node.js/storage';
 import { getParameter, hasParameter } from '@project-chip/matter-node.js/util';
+export { Bridge } from './Bridge';
+import { Bridge } from './Bridge';
 
 let MATTER_SERVER: MatterServer;
 let STORAGE: StorageBackendDisk;
@@ -14,7 +16,7 @@ export function serverSetup(): {
     storageManager: StorageManager;
 } {
     if (!(MATTER_SERVER && STORAGE && STORAGE_MANAGER)) {
-        const storageLocation = getParameter('store') || './deviceData';
+        const storageLocation = getParameter('store') || '/config/deviceData';
 
         STORAGE = new StorageBackendDisk(
             storageLocation,
@@ -26,4 +28,13 @@ export function serverSetup(): {
         });
     }
     return { matterServer: MATTER_SERVER, storageManager: STORAGE_MANAGER };
+}
+
+export function getBridge(): Bridge {
+    const serverData = serverSetup();
+    const bridge = Bridge.getInstance(
+        serverData.matterServer,
+        serverData.storageManager
+    );
+    return bridge;
 }

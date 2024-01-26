@@ -8,7 +8,6 @@ export class HAMiddleware {
     private logger = new Logger('HAMiddleware');
     private hassClient: HassApi;
     private static instance: HAMiddleware;
-    private connectionOpen: boolean = false;
     private requestFulfilled: boolean = true;
     private entities: { [k: string]: HassEntity } = {};
     private functionsToCallOnChange: {
@@ -36,8 +35,7 @@ export class HAMiddleware {
     subscribe() {
         this.hassClient.on('state_changed', (event) => {
             this.logger.debug(event);
-            const toDo =
-                this.functionsToCallOnChange[event.data.entity_id];
+            const toDo = this.functionsToCallOnChange[event.data.entity_id];
             if (toDo) {
                 toDo(event.data);
             }
@@ -97,12 +95,6 @@ export class HAMiddleware {
         if (!HAMiddleware.instance) {
             const client = await hass(callerOptions);
             HAMiddleware.instance = new HAMiddleware(client);
-            let waited = 0;
-            const timeOut = 5000;
-            while (!HAMiddleware.instance.connectionOpen && waited < timeOut) {
-                await sleep(1000);
-                waited += 1000;
-            }
         }
         return HAMiddleware.instance;
     }
