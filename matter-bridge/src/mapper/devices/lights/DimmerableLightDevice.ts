@@ -16,7 +16,14 @@ export const addDimmerableLightDevice: AddHaDeviceToBridge = (
     haMiddleware: HAMiddleware,
     bridge: Bridge
 ): Device => {
-    const device = new DimmableLightDevice();
+    const device = new DimmableLightDevice(
+        { onOff: haEntity.state === 'on' },
+        {
+            currentLevel: Number(haEntity.attributes['brightness']) || null,
+            onLevel: 0.1,
+            options: { coupleColorTempToLevel: false, executeIfOff: false },
+        }
+    );
     const serialFromId = MD5(haEntity.entity_id).toString();
     device.addOnOffListener((value, oldValue) => {
         if (value !== oldValue) {

@@ -8,6 +8,7 @@ export class HAMiddleware {
     private logger = new Logger('HAMiddleware');
     private hassClient: HassApi;
     private static instance: HAMiddleware;
+    private static callerOptions: Partial<HassWsOptions> | undefined;
     private requestFulfilled: boolean = true;
     private entities: { [k: string]: HassEntity } = {};
     private functionsToCallOnChange: {
@@ -93,6 +94,7 @@ export class HAMiddleware {
         callerOptions?: Partial<HassWsOptions> | undefined
     ): Promise<HAMiddleware> {
         if (!HAMiddleware.instance) {
+            HAMiddleware.callerOptions = callerOptions;
             const client = await hass(callerOptions);
             HAMiddleware.instance = new HAMiddleware(client);
         }
