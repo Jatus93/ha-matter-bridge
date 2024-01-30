@@ -14,20 +14,25 @@ export function hasParameter(name: string) {
 
 export function getIntParameter(name: string) {
     const value = getParameter(name);
-    if (value === undefined) return undefined;
+    if (value === undefined) {
+        return undefined;
+    }
     const intValue = parseInt(value, 10);
-    if (isNaN(intValue))
+    if (isNaN(intValue)) {
         throw new ValidationError(
-            `Invalid value for parameter ${name}: ${value} is not a number`
+            `Invalid value for parameter ${name}: ${value} is not a number`,
         );
+    }
     return intValue;
 }
 
 export function commandExecutor(scriptParamName: string) {
     const script = getParameter(scriptParamName);
-    if (script === undefined) return undefined;
+    if (script === undefined) {
+        return undefined;
+    }
     return () =>
         console.log(
-            `${scriptParamName}: ${execSync(script).toString().slice(0, -1)}`
+            `${scriptParamName}: ${execSync(script).toString().slice(0, -1)}`,
         );
 }

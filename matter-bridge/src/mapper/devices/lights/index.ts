@@ -11,25 +11,27 @@ export * from './OnOffLightDevice';
 
 const LOGGER = new Logger('Lights');
 
-const LIGHTS_MAP_FUNCTIONS: Map<string, AddHaDeviceToBridge> = new Map<
-    string,
-    AddHaDeviceToBridge
->([
-    ['onoff', addOnOffLightDevice],
-    ['rgb', addDimmableLightDevice],
-    ['brightness', addDimmableLightDevice],
-]);
+const LIGHTS_MAP_FUNCTIONS: Map<string, AddHaDeviceToBridge> =
+    new Map<string, AddHaDeviceToBridge>([
+        ['onoff', addOnOffLightDevice],
+        ['rgb', addDimmableLightDevice],
+        ['brightness', addDimmableLightDevice],
+    ]);
 
 const LIGHTS_MAP: Map<string, Device> = new Map<string, Device>();
 
 export function setLights(
     lights: HassEntity[],
     haMiddleware: HAMiddleware,
-    bridge: Bridge
+    bridge: Bridge,
 ) {
     lights.forEach((entity) => {
-        LOGGER.info({ colormodes: entity.attributes['supported_color_modes'] });
-        const key = (entity.attributes['supported_color_modes'] as string[])[0];
+        LOGGER.info({
+            colormodes: entity.attributes['supported_color_modes'],
+        });
+        const key = (
+            entity.attributes['supported_color_modes'] as string[]
+        )[0];
         LOGGER.info({ key });
         const lightBuildFunction = LIGHTS_MAP_FUNCTIONS.get(key);
         if (!lightBuildFunction) {
@@ -37,7 +39,7 @@ export function setLights(
         }
         LIGHTS_MAP.set(
             entity.entity_id,
-            lightBuildFunction(entity, haMiddleware, bridge)
+            lightBuildFunction(entity, haMiddleware, bridge),
         );
     });
 }

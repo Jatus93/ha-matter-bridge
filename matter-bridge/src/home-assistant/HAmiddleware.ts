@@ -15,14 +15,19 @@ export class HAMiddleware {
         this.hassClient.rawClient.ws.close();
     }
 
-    async callAService(domain: string, service: string, extraArgs?: unknown) {
+    async callAService(
+        domain: string,
+        service: string,
+        extraArgs?: unknown,
+    ) {
         await this.hassClient.callService(domain, service, extraArgs);
     }
 
     subscribe() {
         this.hassClient.on('state_changed', (event) => {
             this.logger.debug(JSON.stringify(event));
-            const toDo = this.functionsToCallOnChange[event.data.entity_id];
+            const toDo =
+                this.functionsToCallOnChange[event.data.entity_id];
             if (toDo) {
                 toDo(event);
             }
@@ -31,7 +36,7 @@ export class HAMiddleware {
 
     subscribeToDevice(
         deviceId: string,
-        fn: (event: StateChangedEvent) => void
+        fn: (event: StateChangedEvent) => void,
     ) {
         this.functionsToCallOnChange[deviceId] = fn;
         this.logger.debug(this.functionsToCallOnChange);
@@ -39,19 +44,20 @@ export class HAMiddleware {
 
     async getStates(): Promise<{ [k: string]: HassEntity }> {
         const states = await this.hassClient.getStates();
-        const sorted = states.reduceRight<{ [k: string]: HassEntity }>(
-            (last, current) => {
-                last[current['entity_id']] = current;
-                return last;
-            },
-            {}
-        );
+        const sorted = states.reduceRight<{
+            [k: string]: HassEntity;
+        }>((last, current) => {
+            last[current['entity_id']] = current;
+            return last;
+        }, {});
         this.logger.debug(JSON.stringify({ getStates: sorted }));
         this.entities = sorted;
         return this.entities;
     }
 
-    async getStatesPartitionedByType(): Promise<{ [k: string]: HassEntity[] }> {
+    async getStatesPartitionedByType(): Promise<{
+        [k: string]: HassEntity[];
+    }> {
         const states = await this.getStates();
         const toReturn = Object.keys(states).reduceRight<{
             [k: string]: HassEntity[];
@@ -64,7 +70,7 @@ export class HAMiddleware {
             return prev;
         }, {});
         this.logger.debug(
-            JSON.stringify({ getStatesPartitionedByType: toReturn })
+            JSON.stringify({ getStatesPartitionedByType: toReturn }),
         );
         return toReturn;
     }
@@ -79,7 +85,7 @@ export class HAMiddleware {
     }
 
     public static async getInstance(
-        callerOptions?: Partial<HassWsOptions> | undefined
+        callerOptions?: Partial<HassWsOptions> | undefined,
     ): Promise<HAMiddleware> {
         if (!HAMiddleware.instance) {
             const client = await hass(callerOptions);

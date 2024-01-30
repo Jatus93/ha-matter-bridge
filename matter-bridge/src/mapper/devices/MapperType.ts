@@ -7,7 +7,7 @@ import { Bridge } from '../../matter';
 export type AddHaDeviceToBridge = (
     haEntity: HassEntity,
     haMiddleware: HAMiddleware,
-    bridge: Bridge
+    bridge: Bridge,
 ) => Device;
 
 export { HAMiddleware } from '../../home-assistant/HAmiddleware';

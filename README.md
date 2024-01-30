@@ -1,5 +1,7 @@
 # HA-Matter-Bridge
 
+[![paypal](https://camo.githubusercontent.com/0283ea90498d8ea623c07906a5e07e9e6c2a5eaa6911d52033687c60cfa8d22f/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f446f6e6174652d50617950616c2d677265656e2e737667)](https://www.paypal.com/donate/?business=VHWQSZR2SS898&no_recurring=0&item_name=HA+Matter+Bridge&currency_code=EUR) [![Publish Docker image](https://github.com/Jatus93/ha-matter-bridge/actions/workflows/docker-image.yml/badge.svg)](https://github.com/Jatus93/ha-matter-bridge/actions/workflows/docker-image.yml)
+
 ## Purpose
 
 This project serves as a proof of concept to connect HomeAssistant devices to Voice Assistants through the Matter Protocol.
@@ -31,6 +33,7 @@ This project serves as a proof of concept to connect HomeAssistant devices to Vo
 1. Help organize the project and dependencies.
 2. Add integrations for other devices.
 3. Add some tests
+4. Donation
 
 ## Known Issues and Limitations
 

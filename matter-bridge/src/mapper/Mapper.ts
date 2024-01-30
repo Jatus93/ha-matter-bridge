@@ -8,19 +8,23 @@ const LOGGER = new Logger('Mapper');
 
 async function setHasEntities(
     haMiddleware: HAMiddleware,
-    bridge: Bridge
+    bridge: Bridge,
 ): Promise<void> {
     const entities = await haMiddleware.getStatesPartitionedByType();
     LOGGER.info({ entities });
     if (entities['light']) {
-        LOGGER.info('adding ', entities['light'].length, 'light devices');
+        LOGGER.info(
+            'adding ',
+            entities['light'].length,
+            'light devices',
+        );
         setLights(entities['light'], haMiddleware, bridge);
     }
 }
 
 export async function addAllDevicesToBridge(
     haMiddleware: HAMiddleware,
-    bridge: Bridge
+    bridge: Bridge,
 ): Promise<void> {
     await setHasEntities(haMiddleware, bridge);
     haMiddleware.subscribe();

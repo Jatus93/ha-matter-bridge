@@ -7,54 +7,68 @@ import {
     HassEntity,
     StateChangedEvent,
 } from '../../../home-assistant/HAssTypes';
-import { AddHaDeviceToBridge, Bridge, HAMiddleware } from '../MapperType';
+import {
+    AddHaDeviceToBridge,
+    Bridge,
+    HAMiddleware,
+} from '../MapperType';
 import { Logger } from '@project-chip/matter-node.js/log';
 
 const LOGGER = new Logger('DimmableLight');
 export const addDimmableLightDevice: AddHaDeviceToBridge = (
     haEntity: HassEntity,
     haMiddleware: HAMiddleware,
-    bridge: Bridge
+    bridge: Bridge,
 ): Device => {
     LOGGER.debug(
         `Building device ${haEntity.entity_id} \n ${JSON.stringify({
             haEntity,
-        })}`
+        })}`,
     );
     const device = new DimmableLightDevice(
         { onOff: haEntity.state === 'on' },
         {
             currentLevel:
-                Number(haEntity.attributes['brightness']) / 255 || null,
+                Number(haEntity.attributes['brightness']) / 255 ||
+                null,
             onLevel: 0.1,
-            options: { coupleColorTempToLevel: false, executeIfOff: false },
-        }
+            options: {
+                coupleColorTempToLevel: false,
+                executeIfOff: false,
+            },
+        },
     );
     const serialFromId = MD5(haEntity.entity_id).toString();
     device.addOnOffListener((value, oldValue) => {
         LOGGER.debug(
-            `OnOff Event for device ${haEntity.entity_id}, ${JSON.stringify({
-                value,
-                oldValue,
-            })}`
+            `OnOff Event for device ${haEntity.entity_id}, ${JSON.stringify(
+                {
+                    value,
+                    oldValue,
+                },
+            )}`,
         );
         if (value !== oldValue) {
-            haMiddleware.callAService('light', value ? 'turn_on' : 'turn_off', {
-                entity_id: haEntity.entity_id,
-            });
+            haMiddleware.callAService(
+                'light',
+                value ? 'turn_on' : 'turn_off',
+                {
+                    entity_id: haEntity.entity_id,
+                },
+            );
         }
     });
     device.addCommandHandler(
         'identify',
-        async ({ request: { identifyTime } }) =>
+        ({ request: { identifyTime } }) =>
             LOGGER.info(
-                `Identify called for OnOffDevice ${haEntity.attributes['friendly_name']} with id: ${serialFromId} and identifyTime: ${identifyTime}`
-            )
+                `Identify called for OnOffDevice ${haEntity.attributes['friendly_name']} with id: ${serialFromId} and identifyTime: ${identifyTime}`,
+            ),
     );
 
     device.addCurrentLevelListener((value) => {
         LOGGER.debug(
-            `CurrentLevel Event for device ${haEntity.entity_id} value: ${value}`
+            `CurrentLevel Event for device ${haEntity.entity_id} value: ${value}`,
         );
         let extraArgs = { entity_id: haEntity.entity_id } as object;
         if (Number(value) > 0) {
@@ -63,7 +77,7 @@ export const addDimmableLightDevice: AddHaDeviceToBridge = (
         haMiddleware.callAService(
             'light',
             Number(value) > 0 ? 'turn_on' : 'turn_off',
-            extraArgs
+            extraArgs,
         );
     });
 
@@ -74,9 +88,11 @@ export const addDimmableLightDevice: AddHaDeviceToBridge = (
             LOGGER.debug(JSON.stringify(event));
             device.setOnOff(event.data.new_state?.state === 'on');
             device.setCurrentLevel(
-                (event.data.new_state?.attributes as never)['brightness']
+                (event.data.new_state?.attributes as never)[
+                    'brightness'
+                ],
             );
-        }
+        },
     );
 
     bridge.addDevice(device, {
