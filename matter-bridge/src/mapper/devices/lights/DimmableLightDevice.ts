@@ -11,7 +11,7 @@ import { AddHaDeviceToBridge, Bridge, HAMiddleware } from '../MapperType';
 import { Logger } from '@project-chip/matter-node.js/log';
 
 const LOGGER = new Logger('DimmableLight');
-export const addDimmerableLightDevice: AddHaDeviceToBridge = (
+export const addDimmableLightDevice: AddHaDeviceToBridge = (
     haEntity: HassEntity,
     haMiddleware: HAMiddleware,
     bridge: Bridge
@@ -63,7 +63,7 @@ export const addDimmerableLightDevice: AddHaDeviceToBridge = (
         );
     });
 
-    haMiddleware.subscrieToDevice(
+    haMiddleware.subscribeToDevice(
         haEntity.entity_id,
         (event: StateChangedEvent) => {
             LOGGER.debug(`Event for device ${haEntity.entity_id}`);

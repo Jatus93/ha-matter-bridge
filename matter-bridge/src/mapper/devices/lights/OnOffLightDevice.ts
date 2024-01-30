@@ -8,7 +8,7 @@ import {
 import { AddHaDeviceToBridge, Bridge, HAMiddleware } from '../MapperType';
 import { Logger } from '@project-chip/matter-node.js/log';
 
-const LOGGER = new Logger('OnOfflIght');
+const LOGGER = new Logger('OnOffLight');
 export const addOnOffLightDevice: AddHaDeviceToBridge = (
     haEntity: HassEntity,
     haMiddleware: HAMiddleware,
@@ -42,7 +42,7 @@ export const addOnOffLightDevice: AddHaDeviceToBridge = (
                 `Identify called for OnOffDevice ${haEntity.attributes['friendly_name']} with id: ${serialFromId} and identifyTime: ${identifyTime}`
             )
     );
-    haMiddleware.subscrieToDevice(
+    haMiddleware.subscribeToDevice(
         haEntity.entity_id,
         (event: StateChangedEvent) => {
             LOGGER.debug(`Event for device ${haEntity.entity_id}`);

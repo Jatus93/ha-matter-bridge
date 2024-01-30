@@ -1,6 +1,6 @@
 ---
 name: 'HA Matter Bridge'
-version: '0.0.1-alpha'
+version: '0.0.2-alpha'
 slug: ha-matter-bridge
 description: This project serves as a proof of concept to connect HomeAssistant devices to Voice Assistants through the Matter Protocol.
 init: false

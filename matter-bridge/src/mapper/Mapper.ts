@@ -6,7 +6,7 @@ import { HAMiddleware } from '../home-assistant/HAmiddleware';
 
 const LOGGER = new Logger('Mapper');
 
-async function setHasEnties(
+async function setHasEntities(
     haMiddleware: HAMiddleware,
     bridge: Bridge
 ): Promise<void> {
@@ -22,6 +22,6 @@ export async function addAllDevicesToBridge(
     haMiddleware: HAMiddleware,
     bridge: Bridge
 ): Promise<void> {
-    await setHasEnties(haMiddleware, bridge);
+    await setHasEntities(haMiddleware, bridge);
     haMiddleware.subscribe();
 }

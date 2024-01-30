@@ -2,11 +2,11 @@ import { Logger } from '@project-chip/matter-node.js/log';
 import { HAMiddleware } from '../../../home-assistant/HAmiddleware';
 import { HassEntity } from '../../../home-assistant/HAssTypes';
 import { AddHaDeviceToBridge, Bridge } from '../MapperType';
-import { addDimmerableLightDevice } from './DimmerableLightDevice';
+import { addDimmableLightDevice } from './DimmableLightDevice';
 import { addOnOffLightDevice } from './OnOffLightDevice';
 import { Device } from '@project-chip/matter-node.js/device';
 
-export * from './DimmerableLightDevice';
+export * from './DimmableLightDevice';
 export * from './OnOffLightDevice';
 
 const LOGGER = new Logger('Lights');
@@ -16,8 +16,8 @@ const LIGHTS_MAP_FUNCTIONS: Map<string, AddHaDeviceToBridge> = new Map<
     AddHaDeviceToBridge
 >([
     ['onoff', addOnOffLightDevice],
-    ['rgb', addDimmerableLightDevice],
-    ['brightness', addDimmerableLightDevice],
+    ['rgb', addDimmableLightDevice],
+    ['brightness', addDimmableLightDevice],
 ]);
 
 const LIGHTS_MAP: Map<string, Device> = new Map<string, Device>();

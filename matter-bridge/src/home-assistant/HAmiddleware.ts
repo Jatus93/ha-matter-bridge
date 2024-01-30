@@ -2,35 +2,21 @@ import { Logger } from '@project-chip/matter-node.js/log';
 import { HassEntity, StateChangedEvent } from './HAssTypes';
 import hass, { HassApi, HassWsOptions } from 'homeassistant-ws';
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
 export class HAMiddleware {
     private logger = new Logger('HAMiddleware');
     private hassClient: HassApi;
     private static instance: HAMiddleware;
-    private static callerOptions: Partial<HassWsOptions> | undefined;
-    private requestFulfilled: boolean = true;
     private entities: { [k: string]: HassEntity } = {};
     private functionsToCallOnChange: {
         [k: string]: ((data: StateChangedEvent) => void) | undefined;
     } = {};
-
-    async waitCompletition(): Promise<void> {
-        let waited = 0;
-        const timeOut = 5000;
-        while (!this.requestFulfilled && waited < timeOut) {
-            await sleep(1000);
-            waited += 1000;
-        }
-    }
 
     stop(): void {
         this.hassClient.rawClient.ws.close();
     }
 
     async callAService(domain: string, service: string, extraArgs?: unknown) {
-        this.requestFulfilled = false;
-        this.hassClient.callService(domain, service, extraArgs);
+        await this.hassClient.callService(domain, service, extraArgs);
     }
 
     subscribe() {
@@ -43,13 +29,15 @@ export class HAMiddleware {
         });
     }
 
-    subscrieToDevice(deviceId: string, fn: (event: StateChangedEvent) => void) {
+    subscribeToDevice(
+        deviceId: string,
+        fn: (event: StateChangedEvent) => void
+    ) {
         this.functionsToCallOnChange[deviceId] = fn;
         this.logger.debug(this.functionsToCallOnChange);
     }
 
     async getStates(): Promise<{ [k: string]: HassEntity }> {
-        this.requestFulfilled = false;
         const states = await this.hassClient.getStates();
         const sorted = states.reduceRight<{ [k: string]: HassEntity }>(
             (last, current) => {
@@ -82,9 +70,7 @@ export class HAMiddleware {
     }
 
     async getServices() {
-        this.requestFulfilled = false;
         const states = await this.hassClient.getServices();
-
         return states;
     }
 
@@ -96,7 +82,6 @@ export class HAMiddleware {
         callerOptions?: Partial<HassWsOptions> | undefined
     ): Promise<HAMiddleware> {
         if (!HAMiddleware.instance) {
-            HAMiddleware.callerOptions = callerOptions;
             const client = await hass(callerOptions);
             HAMiddleware.instance = new HAMiddleware(client);
         }

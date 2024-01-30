@@ -29,7 +29,7 @@ export class Bridge {
     private ready = false;
 
     private matterServer: MatterServer;
-    private static instace: Bridge;
+    private static instance: Bridge;
     private logger = new Logger('bridge');
     private storageManager: StorageManager;
     private aggregator: Aggregator;
@@ -49,10 +49,10 @@ export class Bridge {
         matterServer: MatterServer,
         storageManager: StorageManager
     ): Bridge {
-        if (!Bridge.instace) {
-            this.instace = new Bridge(matterServer, storageManager);
+        if (!Bridge.instance) {
+            this.instance = new Bridge(matterServer, storageManager);
         }
-        return Bridge.instace;
+        return Bridge.instance;
     }
 
     private async setupContextAndCommissioningServer(): Promise<CommissioningServer> {
