@@ -56,10 +56,14 @@ export const addDimmableLightDevice: AddHaDeviceToBridge = (
         LOGGER.debug(
             `CurrentLevel Event for device ${haEntity.entity_id} value: ${value}`
         );
+        let extraArgs = { entity_id: haEntity.entity_id } as object;
+        if (Number(value) > 0) {
+            extraArgs = { ...extraArgs, brightness: Number(value) };
+        }
         haMiddleware.callAService(
             'light',
             Number(value) > 0 ? 'turn_on' : 'turn_off',
-            { entity_id: haEntity.entity_id, brightness: Number(value) }
+            extraArgs
         );
     });
 
