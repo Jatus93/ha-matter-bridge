@@ -14,9 +14,21 @@ export const addOnOffLightDevice: AddHaDeviceToBridge = (
     haMiddleware: HAMiddleware,
     bridge: Bridge
 ): Device => {
+    LOGGER.debug(
+        `Building device ${haEntity.entity_id} \n ${JSON.stringify({
+            haEntity,
+        })}`
+    );
     const device = new OnOffLightDevice();
     const serialFromId = MD5(haEntity.entity_id).toString();
     device.addOnOffListener((value, oldValue) => {
+        LOGGER.debug(
+            `OnOff Event for device ${haEntity.entity_id}, ${JSON.stringify({
+                value,
+                oldValue,
+            })}`
+        );
+
         if (value !== oldValue) {
             haMiddleware.callAService('light', value ? 'turn_on' : 'turn_off', {
                 entity_id: haEntity.entity_id,
@@ -33,6 +45,8 @@ export const addOnOffLightDevice: AddHaDeviceToBridge = (
     haMiddleware.subscrieToDevice(
         haEntity.entity_id,
         (event: StateChangedEvent) => {
+            LOGGER.debug(`Event for device ${haEntity.entity_id}`);
+            LOGGER.debug(JSON.stringify(event));
             device.setOnOff(event.data.new_state?.state === 'on');
         }
     );

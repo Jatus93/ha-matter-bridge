@@ -35,10 +35,10 @@ export class HAMiddleware {
 
     subscribe() {
         this.hassClient.on('state_changed', (event) => {
-            this.logger.debug(event);
+            this.logger.debug(JSON.stringify(event));
             const toDo = this.functionsToCallOnChange[event.data.entity_id];
             if (toDo) {
-                toDo(event.data);
+                toDo(event);
             }
         });
     }
@@ -58,7 +58,7 @@ export class HAMiddleware {
             },
             {}
         );
-        this.logger.debug({ getStates: sorted });
+        this.logger.debug(JSON.stringify({ getStates: sorted }));
         this.entities = sorted;
         return this.entities;
     }
@@ -75,7 +75,9 @@ export class HAMiddleware {
             prev[key].push(states[current]);
             return prev;
         }, {});
-        this.logger.debug({ getStatesPartitionedByType: toReturn });
+        this.logger.debug(
+            JSON.stringify({ getStatesPartitionedByType: toReturn })
+        );
         return toReturn;
     }
 
