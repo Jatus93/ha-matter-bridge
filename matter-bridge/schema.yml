@@ -1,5 +1,0 @@
-message: str
-settings:
-    - HA_HOST: str
-      HA_PORT: int
-      HA_ACCESS_TOKEN: str

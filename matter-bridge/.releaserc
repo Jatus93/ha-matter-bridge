@@ -1,0 +1,52 @@
+{
+    "branches": [
+        {
+            "name": "main"
+        },
+        {
+            "name": "develop",
+            "channel": "nightly",
+            "prerelease": true
+        },
+        {
+            "name": "release/*"
+        }
+    ],
+    "plugins": [
+        "@semantic-release/commit-analyzer",
+        "@semantic-release/release-notes-generator",
+        "@semantic-release/commit-analyzer",
+        [
+            "semantic-release-replace-plugin",
+            {
+                "replacements": [
+                    {
+                        "files": [
+                            "config.yml"
+                        ],
+                        "from": "version: '.*'",
+                        "to": "version: '${nextRelease.version}'",
+                        "results": [
+                            {
+                                "file": "config.yml",
+                                "hasChanged": true,
+                                "numMatches": 1,
+                                "numReplacements": 1
+                            }
+                        ],
+                        "countMatches": true
+                    }
+                ]
+            }
+        ],
+        [
+            "@semantic-release/git",
+            {
+                "assets": [
+                    "matter-bridge/config.yml"
+                ],
+                "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+            }
+        ]
+    ]
+}

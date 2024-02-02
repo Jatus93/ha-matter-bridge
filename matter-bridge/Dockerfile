@@ -1,5 +1,5 @@
 ARG BUILD_FROM=ghcr.io/hassio-addons/base:15.0.3
-FROM node:18.19.0-alpine as node
+FROM node:20.11.0-alpine as node
 FROM ${BUILD_FROM} as runenv
 
 COPY --from=node /usr/lib /usr/lib
