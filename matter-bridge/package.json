@@ -20,6 +20,9 @@
         "ws": "^8.16.0"
     },
     "devDependencies": {
+        "@semantic-release/changelog": "^6.0.3",
+        "@semantic-release/exec": "^6.0.3",
+        "@semantic-release/git": "^10.0.1",
         "@stylistic/eslint-plugin": "^1.5.4",
         "@stylistic/eslint-plugin-js": "^1.5.4",
         "@stylistic/eslint-plugin-plus": "^1.5.4",
@@ -36,6 +39,8 @@
         "husky": "^9.0.7",
         "prettier": "^3.2.4",
         "prettier-eslint": "^16.3.0",
+        "semantic-release": "^23.0.0",
+        "semantic-release-replace-plugin": "^1.2.7",
         "standard-version": "^9.5.0",
         "typescript": "^5.3.3"
     },
