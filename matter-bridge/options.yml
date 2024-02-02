@@ -1,5 +1,0 @@
-message: "settings"
-  settings:
-    - HA_HOST: localhost
-      HA_PORT: 8123
-      HA_ACCESS_TOKEN: "your acces token"
