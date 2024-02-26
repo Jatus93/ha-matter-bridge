@@ -67,6 +67,7 @@ export const addOnOffLightDevice: AddHaDeviceToBridge = (
         nodeLabel: haEntity.attributes['friendly_name'],
         reachable: true,
         serialNumber: serialFromId,
+        uniqueId: serialFromId,
     });
     return device;
 };
