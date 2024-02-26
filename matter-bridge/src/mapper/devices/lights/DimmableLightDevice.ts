@@ -99,6 +99,7 @@ export const addDimmableLightDevice: AddHaDeviceToBridge = (
         nodeLabel: haEntity.attributes['friendly_name'],
         reachable: true,
         serialNumber: serialFromId,
+        uniqueId: serialFromId,
     });
     return device;
 };
