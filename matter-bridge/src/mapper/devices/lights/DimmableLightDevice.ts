@@ -86,12 +86,14 @@ export const addDimmableLightDevice: AddHaDeviceToBridge = (
         (event: StateChangedEvent) => {
             LOGGER.debug(`Event for device ${haEntity.entity_id}`);
             LOGGER.debug(JSON.stringify(event));
-            device.setOnOff(event.data.new_state?.state === 'on');
-            device.setCurrentLevel(
+            let brightness: number = Number(
                 (event.data.new_state?.attributes as never)[
                     'brightness'
                 ],
             );
+            brightness = brightness > 254 ? 254 : brightness;
+            device.setOnOff(event.data.new_state?.state === 'on');
+            device.setCurrentLevel(brightness);
         },
     );
 
