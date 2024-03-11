@@ -15,8 +15,9 @@ import {
     StateChangedEvent,
 } from '../../../home-assistant/HAssTypes.js';
 import { Endpoint } from '@project-chip/matter.js/endpoint';
-import { MD5 } from 'crypto-js';
 import { Logger } from '@project-chip/matter-node.js/log';
+import pkg from 'crypto-js';
+const { MD5 } = pkg;
 
 const LOGGER = new Logger('RollerShade');
 

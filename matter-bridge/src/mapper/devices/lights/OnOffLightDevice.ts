@@ -2,7 +2,6 @@
 import { BridgedDeviceBasicInformationServer } from '@project-chip/matter.js/behavior/definitions/bridged-device-basic-information';
 import { OnOffLightDevice } from '@project-chip/matter.js/devices/OnOffLightDevice';
 import { Endpoint } from '@project-chip/matter.js/endpoint';
-import { MD5 } from 'crypto-js';
 import {
     HassEntity,
     StateChangedEvent,
@@ -13,6 +12,8 @@ import {
     HAMiddleware,
 } from '../MapperType.js';
 import { Logger } from '@project-chip/matter-node.js/log';
+import pkg from 'crypto-js';
+const { MD5 } = pkg;
 
 const LOGGER = new Logger('OnOffLight');
 export const addOnOffLightDevice: AddHaDeviceToBridge = (
