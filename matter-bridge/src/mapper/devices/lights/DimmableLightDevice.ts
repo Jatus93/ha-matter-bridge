@@ -2,7 +2,8 @@ import { DimmableLightDevice } from '@project-chip/matter.js/devices/DimmableLig
 import { Endpoint } from '@project-chip/matter.js/endpoint';
 import { BridgedDeviceBasicInformationServer } from '@project-chip/matter.js/behavior/definitions/bridged-device-basic-information';
 
-import { MD5 } from 'crypto-js';
+import pkg from 'crypto-js';
+const { MD5 } = pkg;
 import {
     HassEntity,
     StateChangedEvent,
