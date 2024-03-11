@@ -1,6 +1,7 @@
 {
     "name": "ha-matter-bridge",
     "main": "index.js",
+    "type": "module",
     "scripts": {
         "build": "tsc",
         "start": "node ./build/index.js",
@@ -12,8 +13,8 @@
     "author": "",
     "license": "GPL-3.0",
     "dependencies": {
-        "@project-chip/matter-node.js": "0.7.5",
-        "@project-chip/matter.js-tools": "0.7.5",
+        "@project-chip/matter-node.js": "^0.8.0-alpha.0-20240309-64eaef67",
+        "@project-chip/matter.js-tools": "^0.8.0-alpha.0-20240309-64eaef67",
         "@types/node": "18.18",
         "crypto-js": "^4.2.0",
         "homeassistant-ws": "^0.2.2",
@@ -29,8 +30,8 @@
         "@stylistic/eslint-plugin-ts": "^1.5.4",
         "@types/crypto-js": "^4.2.2",
         "@types/ws": "^8.5.10",
-        "@typescript-eslint/eslint-plugin": "^6.20.0",
-        "@typescript-eslint/parser": "^6.20.0",
+        "@typescript-eslint/eslint-plugin": "^7.1.1",
+        "@typescript-eslint/parser": "^7.1.1",
         "commitizen": "^4.3.0",
         "cz-conventional-changelog": "^3.3.0",
         "eslint": "^8.56.0",
@@ -42,7 +43,7 @@
         "semantic-release": "^23.0.0",
         "semantic-release-replace-plugin": "^1.2.7",
         "standard-version": "^9.5.0",
-        "typescript": "^5.3.3"
+        "typescript": "5.3.3"
     },
     "config": {
         "commitizen": {

@@ -1,8 +1,8 @@
-import { getIntParameter, getParameter } from './utils/utils';
-import { Bridge, getBridge } from './matter';
+import { getIntParameter, getParameter } from './utils/utils.js';
+import { Bridge, getBridge } from './matter-v2/index.js';
 import { Logger } from '@project-chip/matter-node.js/log';
-import { HAMiddleware } from './home-assistant/HAmiddleware';
-import { addAllDevicesToBridge } from './mapper/Mapper';
+import { HAMiddleware } from './home-assistant/HAmiddleware.js';
+import { addAllDevicesToBridge } from './mapper/Mapper.js';
 
 const LOGGER = new Logger('Main');
 let HA_MIDDLEWARE: HAMiddleware;
@@ -40,5 +40,5 @@ process.on('SIGINT', () => {
     HA_MIDDLEWARE.stop();
     BRIDGE.stop()
         .then(() => process.exit(0))
-        .catch((err) => LOGGER.error(err));
+        .catch((err: Error) => LOGGER.error(err));
 });

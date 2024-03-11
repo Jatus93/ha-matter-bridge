@@ -30,15 +30,12 @@ jobs:
           echo ${{ github.actor }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4.0.1
+        uses: actions/setup-node@v4.0.2
         with:
           node-version-file: "matter-bridge/.nvmrc"
 
       - name: Install dependencies
-        run: cd matter-bridge && npm clean-install
-
-      - name: Verify the integrity of provenance attestations and registry signatures for installed dependencies
-        run: cd matter-bridge && npm audit signatures
+        run: cd matter-bridge && yarn --frozen-lockfile
 
       - name: Release
         env:
