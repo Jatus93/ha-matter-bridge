@@ -1,4 +1,4 @@
-ARG BUILD_FROM=ghcr.io/hassio-addons/base:15.0.3
+ARG BUILD_FROM=ghcr.io/hassio-addons/base:stable
 FROM node:20.11.0-alpine as node
 FROM ${BUILD_FROM} as runenv
 
@@ -8,14 +8,15 @@ COPY --from=node /usr/local/include /usr/local/include
 COPY --from=node /usr/local/bin /usr/local/bin
 
 COPY ./package.json ./
-COPY ./package-lock.json ./
+COPY ./yarn.lock ./
 COPY ./src ./src
 COPY ./tsconfig.json ./
 
-RUN HUSKY=0 && npm install
-RUN npm run build
+RUN npm install -g yarn --force
+RUN HUSKY=0 && yarn install --frozen-lockfile
+RUN yarn run build
 RUN rm -rf ./node_modules
-RUN HUSKY=0 && npm install --production
+RUN HUSKY=0 && yarn install --production --frozen-lockfile
 
 COPY run.sh /
 RUN chmod a+x /run.sh

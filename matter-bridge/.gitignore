@@ -2,3 +2,4 @@ node_modules
 deviceData
 .env
 build
+*.log

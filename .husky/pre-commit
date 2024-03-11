@@ -1,4 +1,4 @@
 # ...
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
-cd ./matter-bridge && npm run lint-fix && git add .
+cd ./matter-bridge && yarn lint-fix && git add .

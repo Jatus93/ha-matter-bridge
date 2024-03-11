@@ -1,14 +1,14 @@
-import { Device } from '@project-chip/matter-node.js/device';
-import { HassEntity } from '../../home-assistant/HAssTypes';
+import { Endpoint } from '@project-chip/matter.js/endpoint';
+import { HassEntity } from '../../home-assistant/HAssTypes.js';
 
-import { HAMiddleware } from '../../home-assistant/HAmiddleware';
-import { Bridge } from '../../matter';
+import { HAMiddleware } from '../../home-assistant/HAmiddleware.js';
+import { Bridge } from '../../matter-v2/index.js';
 
 export type AddHaDeviceToBridge = (
     haEntity: HassEntity,
     haMiddleware: HAMiddleware,
     bridge: Bridge,
-) => Device;
+) => Endpoint;
 
-export { HAMiddleware } from '../../home-assistant/HAmiddleware';
-export { Bridge } from '../../matter';
+export { HAMiddleware };
+export { Bridge };

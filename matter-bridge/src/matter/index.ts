@@ -7,8 +7,8 @@ import {
     getParameter,
     hasParameter,
 } from '@project-chip/matter-node.js/util';
-export { Bridge } from './Bridge';
-import { Bridge } from './Bridge';
+export { Bridge } from './Bridge.js';
+import { Bridge } from './Bridge.js';
 
 let MATTER_SERVER: MatterServer;
 let STORAGE: StorageBackendDisk;
