@@ -1,5 +1,5 @@
 import { Logger } from '@project-chip/matter-node.js/log';
-import { HassEntity, StateChangedEvent } from './HAssTypes';
+import { HassEntity, StateChangedEvent } from './HAssTypes.js';
 import hass, { HassApi, HassWsOptions } from 'homeassistant-ws';
 
 export class HAMiddleware {
@@ -77,7 +77,7 @@ export class HAMiddleware {
 
     async getServices() {
         const states = await this.hassClient.getServices();
-        return states;
+        return states as object;
     }
 
     private constructor(client: HassApi) {
@@ -88,7 +88,7 @@ export class HAMiddleware {
         callerOptions?: Partial<HassWsOptions> | undefined,
     ): Promise<HAMiddleware> {
         if (!HAMiddleware.instance) {
-            const client = await hass(callerOptions);
+            const client = await hass.default(callerOptions);
             HAMiddleware.instance = new HAMiddleware(client);
         }
         return HAMiddleware.instance;

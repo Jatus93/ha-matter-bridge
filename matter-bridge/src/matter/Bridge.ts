@@ -10,7 +10,7 @@ import {
 } from '@project-chip/matter-node.js/device';
 import { Logger } from '@project-chip/matter-node.js/log';
 import { StorageManager } from '@project-chip/matter-node.js/storage';
-import { getIntParameter, getParameter } from '../utils/utils';
+import { getIntParameter, getParameter } from '../utils/utils.js';
 import { Time } from '@project-chip/matter-node.js/time';
 import { VendorId } from '@project-chip/matter-node.js/datatype';
 import { QrCode } from '@project-chip/matter-node.js/schema';

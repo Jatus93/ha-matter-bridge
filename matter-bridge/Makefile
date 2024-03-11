@@ -1,5 +1,8 @@
 -include .env
 export
 
+build:
+	yarn build
+
 run:
-	npm run start
+	yarn start
