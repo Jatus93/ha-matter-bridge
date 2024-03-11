@@ -85,6 +85,3 @@ jobs:
           git add matter-bridge/config.yml
           git commit -m "chore(config.yml): bump version to ${{steps.yaml-data.outputs.data}} [ci skip]"
           git push
-          git checkout pr/develop
-          git reset v${{steps.yaml-data.outputs.data}} --hard
-          git push
