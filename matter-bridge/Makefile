@@ -1,8 +1,11 @@
 -include .env
 export
 
-build:
+tsc:
 	yarn build
 
 run:
 	yarn start
+
+example:
+	node ./build/example.js

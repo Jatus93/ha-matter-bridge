@@ -1,155 +1,150 @@
+import '@project-chip/matter-node.js';
+import { requireMinNodeVersion } from '@project-chip/matter-node.js/util';
+
+import { Endpoint } from '@project-chip/matter.js/endpoint';
+import { VendorId } from '@project-chip/matter.js/datatype';
+import { ServerNode } from '@project-chip/matter.js/node';
+import { AggregatorEndpoint } from '@project-chip/matter.js/endpoints/AggregatorEndpoint';
 import {
-    CommissioningServer,
-    MatterServer,
-} from '@project-chip/matter-node.js';
-import {
-    Aggregator,
-    ComposedDevice,
-    Device,
-    DeviceTypes,
-} from '@project-chip/matter-node.js/device';
-import { Logger } from '@project-chip/matter-node.js/log';
-import { StorageManager } from '@project-chip/matter-node.js/storage';
-import { getIntParameter, getParameter } from '../utils/utils.js';
+    Environment,
+    StorageService,
+} from '@project-chip/matter.js/environment';
 import { Time } from '@project-chip/matter-node.js/time';
-import { VendorId } from '@project-chip/matter-node.js/datatype';
-import { QrCode } from '@project-chip/matter-node.js/schema';
-import {
-    AttributeInitialValues,
-    BridgedDeviceBasicInformationCluster,
-} from '@project-chip/matter-node.js/cluster';
+requireMinNodeVersion(20);
+
+interface LocalConfig {
+    uniqueId: string;
+    deviceName: string;
+    vendorName: string;
+    passcode: number;
+    discriminator: number;
+    vendorId: number;
+    productName: string;
+    productId: number;
+    port: number;
+}
 
 export class Bridge {
-    private static readonly deviceName =
-        getParameter('name') || 'Matter Bridge';
-    private static readonly deviceType = DeviceTypes.AGGREGATOR.code;
-    private static readonly vendorName =
-        getParameter('vendor') || 'Jatus';
-    private static readonly productName = 'HomeAssistant';
-    private static readonly port = getIntParameter('port') ?? 5540;
+    private server: ServerNode;
+    private aggregator: Endpoint;
 
-    private matterServer: MatterServer;
-    private static instance: Bridge;
-    private logger = new Logger('bridge');
-    private storageManager: StorageManager;
-    private aggregator: Aggregator;
-    private commissioningServer: CommissioningServer | undefined;
-
-    private constructor(
-        matterServer: MatterServer,
-        storageManager: StorageManager,
-    ) {
-        this.matterServer = matterServer;
-        this.storageManager = storageManager;
-
-        this.aggregator = new Aggregator();
+    private constructor(server: ServerNode, aggregator: Endpoint) {
+        this.server = server;
+        this.aggregator = aggregator;
     }
 
-    public static getInstance(
-        matterServer: MatterServer,
-        storageManager: StorageManager,
-    ): Bridge {
-        if (!Bridge.instance) {
-            this.instance = new Bridge(matterServer, storageManager);
-        }
-        return Bridge.instance;
+    public static async create(): Promise<Bridge> {
+        const config = await Bridge.getConfiguration();
+        const server = await Bridge.getServer(config);
+        const aggregator = new Endpoint(AggregatorEndpoint, {
+            id: 'aggregator',
+        });
+        await server.add(aggregator);
+        const bridge = new Bridge(server, aggregator);
+        return bridge;
     }
 
-    private async setupContextAndCommissioningServer(): Promise<CommissioningServer> {
-        this.logger.info('setting up context');
-        await this.storageManager.initialize();
-        const deviceContextStorage =
-            this.storageManager.createContext('Bridge-Device');
-        const passcode =
-            getIntParameter('passcode') ??
-            deviceContextStorage.get('passcode', 20202021);
-        const discriminator =
-            getIntParameter('discriminator') ??
-            deviceContextStorage.get('discriminator', 3840);
-        const vendorId =
-            getIntParameter('vendorid') ??
-            deviceContextStorage.get('vendorid', 0xfff1);
-        const productId =
-            getIntParameter('productid') ??
-            deviceContextStorage.get('productid', 0x8000);
-        const uniqueId =
-            getIntParameter('uniqueid') ??
-            deviceContextStorage.get('uniqueid', Time.nowMs());
+    public async addEndpoint(endpoint: Endpoint): Promise<void> {
+        await this.aggregator.add(endpoint);
+    }
 
-        deviceContextStorage.set('passcode', passcode);
-        deviceContextStorage.set('discriminator', discriminator);
-        deviceContextStorage.set('vendorid', vendorId);
-        deviceContextStorage.set('productid', productId);
-        deviceContextStorage.set('uniqueid', uniqueId);
+    public async start(): Promise<void> {
+        await this.server.bringOnline();
+    }
 
-        const commissioningServer = new CommissioningServer({
-            port: Bridge.port,
-            deviceName: Bridge.deviceName,
-            deviceType: Bridge.deviceType,
-            passcode,
-            discriminator,
+    public async stop(): Promise<void> {
+        await this.server.close();
+    }
+
+    public static async getServer(
+        config: LocalConfig,
+    ): Promise<ServerNode> {
+        const server = await ServerNode.create({
+            id: config.uniqueId,
+            network: {
+                port: config.port,
+            },
+            productDescription: {
+                name: config.deviceName,
+                deviceType: AggregatorEndpoint.deviceType,
+            },
+            commissioning: {
+                passcode: config.passcode,
+                discriminator: config.discriminator,
+            },
             basicInformation: {
-                vendorName: Bridge.vendorName,
-                vendorId: VendorId(vendorId),
-                nodeLabel: Bridge.productName,
-                productName: Bridge.productName,
-                productLabel: Bridge.productName,
-                productId,
-                serialNumber: `node-matter-${uniqueId}`,
+                vendorName: config.vendorName,
+                vendorId: VendorId(config.vendorId),
+                nodeLabel: config.productName,
+                productName: config.productName,
+                productLabel: config.productName,
+                productId: config.productId,
+                serialNumber: `matterjs-${config.uniqueId}`,
+                uniqueId: config.uniqueId,
             },
         });
-
-        return commissioningServer;
+        return server;
     }
 
-    addDevice(
-        device: Device | ComposedDevice,
-        bridgedBasicInformation?: AttributeInitialValues<
-            typeof BridgedDeviceBasicInformationCluster.attributes
-        >,
-    ) {
-        if (!this.commissioningServer?.isCommissioned()) {
-            this.logger.warn(
-                'System not initialized, may cause crashes',
-            );
-        }
-        this.aggregator.addBridgedDevice(
-            device,
-            bridgedBasicInformation,
+    private static async getConfiguration(): Promise<LocalConfig> {
+        const environment = Environment.default;
+
+        const storageService = environment.get(StorageService);
+        console.log(
+            `Storage location: ${storageService.location} (Directory)`,
         );
-    }
-
-    async start() {
-        this.logger.info('Starting...');
-        this.commissioningServer =
-            await this.setupContextAndCommissioningServer();
-        this.commissioningServer.addDevice(this.aggregator);
-        this.matterServer.addCommissioningServer(
-            this.commissioningServer,
+        console.log(
+            'Use the parameter "--storage-path=NAME-OR-PATH" to specify a different storage location in this directory, use --storage-clear to start with an empty storage.',
         );
-        await this.matterServer.start();
-        this.logger.info('Listening');
-        if (!this.commissioningServer.isCommissioned()) {
-            const pairingData =
-                this.commissioningServer.getPairingCode();
-            const { qrPairingCode, manualPairingCode } = pairingData;
+        const deviceStorage = (
+            await storageService.open('device')
+        ).createContext('data');
 
-            console.log(QrCode.get(qrPairingCode));
-            this.logger.info(
-                `QR Code URL: https://project-chip.github.io/connectedhomeip/qrcode.html?data=${qrPairingCode}`,
-            );
-            this.logger.info(
-                `Manual pairing code: ${manualPairingCode}`,
-            );
-        } else {
-            this.logger.info(
-                'Device is already commissioned. Waiting for controllers to connect ...',
-            );
-        }
-    }
+        const deviceName = 'Matter test device';
+        const vendorName = 'matter-node.js';
+        const passcode =
+            environment.vars.number('passcode') ??
+            (await deviceStorage.get('passcode', 20202021));
+        const discriminator =
+            environment.vars.number('discriminator') ??
+            (await deviceStorage.get('discriminator', 3840));
+        // product name / id and vendor id should match what is in the device certificate
+        const vendorId =
+            environment.vars.number('vendorid') ??
+            (await deviceStorage.get('vendorid', 0xfff1));
+        const productName = 'node-matter HA-bridge';
+        const productId =
+            environment.vars.number('productid') ??
+            (await deviceStorage.get('productid', 0x8000));
 
-    async stop() {
-        await this.matterServer.close();
-        await this.storageManager.close();
+        const port = environment.vars.number('port') ?? 5540;
+
+        const uniqueId =
+            environment.vars.string('uniqueid') ??
+            (await deviceStorage.get(
+                'uniqueid',
+                Time.nowMs().toString(),
+            ));
+
+        // Persist basic data to keep them also on restart
+        await deviceStorage.set({
+            passcode,
+            discriminator,
+            vendorid: vendorId,
+            productid: productId,
+            uniqueid: uniqueId,
+        });
+
+        return {
+            deviceName,
+            vendorName,
+            passcode,
+            discriminator,
+            vendorId,
+            productName,
+            productId,
+            port,
+            uniqueId,
+        };
     }
 }

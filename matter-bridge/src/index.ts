@@ -1,5 +1,5 @@
 import { getIntParameter, getParameter } from './utils/utils.js';
-import { Bridge, getBridge } from './matter-v2/index.js';
+import { Bridge } from './matter/Bridge.js';
 import { Logger } from '@project-chip/matter-node.js/log';
 import { HAMiddleware } from './home-assistant/HAmiddleware.js';
 import { addAllDevicesToBridge } from './mapper/Mapper.js';
@@ -22,7 +22,7 @@ async function run() {
         token,
     });
     LOGGER.info('Connected to home assistant');
-    BRIDGE = getBridge();
+    BRIDGE = await Bridge.create();
     LOGGER.info('Creating the bridge');
     await addAllDevicesToBridge(HA_MIDDLEWARE, BRIDGE);
     LOGGER.info('all devices added');
