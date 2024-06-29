@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { BridgedDeviceBasicInformationServer } from '@project-chip/matter.js/behavior/definitions/bridged-device-basic-information';
 import { OnOffLightDevice } from '@project-chip/matter.js/devices/OnOffLightDevice';
 import { Endpoint } from '@project-chip/matter.js/endpoint';
@@ -41,7 +40,8 @@ export const addOnOffLightDevice: AddHaDeviceToBridge = (
             },
         },
     );
-    endpoint.events.onOff.onOff$Change.on((value, oldValue) => {
+
+    endpoint.events.onOff.onOff$Changed.on((value, oldValue) => {
         LOGGER.debug(
             `OnOff Event for device ${haEntity.entity_id}, ${JSON.stringify(
                 {
@@ -60,6 +60,18 @@ export const addOnOffLightDevice: AddHaDeviceToBridge = (
                 },
             );
         }
+    });
+
+    endpoint.events.identify.startIdentifying.on(() => {
+        console.log(
+            `Run identify logic for ${haEntity.entity_id}, ideally blink a light every 0.5s ...`,
+        );
+    });
+
+    endpoint.events.identify.stopIdentifying.on(() => {
+        console.log(
+            `Stop identify logic for ${haEntity.entity_id} ...`,
+        );
     });
 
     haMiddleware.subscribeToDevice(

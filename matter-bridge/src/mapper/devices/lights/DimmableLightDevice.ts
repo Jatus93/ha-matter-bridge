@@ -42,7 +42,7 @@ export const addDimmableLightDevice: AddHaDeviceToBridge = (
             },
         },
     );
-    endpoint.events.onOff.onOff$Change.on((value, oldValue) => {
+    endpoint.events.onOff.onOff$Changed.on((value, oldValue) => {
         LOGGER.debug(
             `OnOff Event for device ${haEntity.entity_id}, ${JSON.stringify(
                 {
@@ -62,7 +62,7 @@ export const addDimmableLightDevice: AddHaDeviceToBridge = (
         }
     });
 
-    endpoint.events.levelControl.currentLevel$Change.on((value) => {
+    endpoint.events.levelControl.currentLevel$Changed.on((value) => {
         LOGGER.debug(
             `CurrentLevel Event for device ${haEntity.entity_id} value: ${value}`,
         );

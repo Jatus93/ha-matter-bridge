@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { setLights } from './devices/lights/index.js';
-import { setWindowCovers } from './devices/window-cover/index.js';
-import { Bridge } from '../matter-v2/index.js';
 import { Logger } from '@project-chip/matter-node.js/log';
 import { HAMiddleware } from '../home-assistant/HAmiddleware.js';
 import { HassEntity } from '../home-assistant/HAssTypes.js';
+import { Bridge } from '../matter/Bridge.js';
+import { setLights } from './devices/lights/index.js';
 
 const LOGGER = new Logger('Mapper');
 const entitiesToFunction = new Map<
@@ -16,7 +15,7 @@ const entitiesToFunction = new Map<
     ) => void
 >([
     ['light', setLights],
-    ['cover', setWindowCovers],
+    // ['cover', setWindowCovers],
 ]);
 
 async function setHasEntities(
@@ -24,12 +23,24 @@ async function setHasEntities(
     bridge: Bridge,
 ): Promise<void> {
     const entities = await haMiddleware.getStatesPartitionedByType();
-    LOGGER.info({ entities });
+    LOGGER.info('Mapper init');
     const entityKeys = Object.keys(entities);
     entityKeys.forEach((key) => {
-        LOGGER.info('adding ', entities[key].length, 'key devices');
-        const setEntitiesFunction = entitiesToFunction.get('key');
+        LOGGER.info(
+            'reading info ',
+            entities[key].length,
+            key,
+            ' key devices',
+        );
+        const setEntitiesFunction = entitiesToFunction.get(key);
+        LOGGER.debug(
+            'Mapped key with function',
+            entitiesToFunction.has(key),
+            setEntitiesFunction === undefined,
+        );
+        LOGGER.debug('Mapped key', entitiesToFunction.has(key));
         if (entitiesToFunction.has(key) && setEntitiesFunction) {
+            LOGGER.info('adding', entities[key].length, key);
             setEntitiesFunction(entities[key], haMiddleware, bridge);
         }
     });
