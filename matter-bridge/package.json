@@ -13,8 +13,7 @@
     "author": "",
     "license": "GPL-3.0",
     "dependencies": {
-        "@project-chip/matter-node.js": "^0.8.0-alpha.0-20240309-64eaef67",
-        "@project-chip/matter.js-tools": "^0.8.0-alpha.0-20240309-64eaef67",
+        "@project-chip/matter-node.js": "^0.9.3",
         "@types/node": "18.18",
         "crypto-js": "^4.2.0",
         "homeassistant-ws": "^0.2.2",
@@ -43,6 +42,7 @@
         "semantic-release": "^23.0.0",
         "semantic-release-replace-plugin": "^1.2.7",
         "standard-version": "^9.5.0",
+        "ts-node": "^10.9.2",
         "typescript": "5.3.3"
     },
     "config": {
