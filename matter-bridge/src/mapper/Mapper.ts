@@ -16,7 +16,6 @@ const entitiesToFunction = new Map<
     ) => void
 >([
     ['light', setLights],
-
     ['cover', setWindowCovers],
 ]);
 
