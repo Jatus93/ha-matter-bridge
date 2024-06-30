@@ -1,17 +1,11 @@
 import '@project-chip/matter-node.js';
 import { WindowCoveringServer } from '@project-chip/matter.js/behavior/definitions/window-covering';
-// import { BridgedDeviceBasicInformationServer } from '@project-chip/matter.js/behavior/definitions/bridged-device-basic-information';
-
 import { WindowCoveringDevice } from '@project-chip/matter.js/devices/WindowCoveringDevice';
-// import {
-//     OnOffLightDevice,
-//     OnOffLightRequirements,
-// } from '@project-chip/matter.js/devices/OnOffLightDevice';
+
 import { Endpoint } from '@project-chip/matter.js/endpoint';
 import {
     HassEntity,
     StateChangedEvent,
-    // StateChangedEvent,
 } from '../../../home-assistant/HAssTypes.js';
 import {
     AddHaDeviceToBridge,
