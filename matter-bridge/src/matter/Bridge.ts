@@ -10,7 +10,11 @@ import {
     StorageService,
 } from '@project-chip/matter.js/environment';
 import { Time } from '@project-chip/matter-node.js/time';
+import { Logger } from '@project-chip/matter-node.js/log';
+
 requireMinNodeVersion(20);
+
+const LOGGER = new Logger('OnOffLight');
 
 interface LocalConfig {
     uniqueId: string;
@@ -45,6 +49,7 @@ export class Bridge {
     }
 
     public async addEndpoint(endpoint: Endpoint): Promise<void> {
+        LOGGER.debug('Adding ', endpoint.id);
         await this.aggregator.add(endpoint);
     }
 
@@ -90,12 +95,11 @@ export class Bridge {
         const environment = Environment.default;
 
         const storageService = environment.get(StorageService);
-        console.log(
+
+        LOGGER.info(
             `Storage location: ${storageService.location} (Directory)`,
         );
-        console.log(
-            'Use the parameter "--storage-path=NAME-OR-PATH" to specify a different storage location in this directory, use --storage-clear to start with an empty storage.',
-        );
+
         const deviceStorage = (
             await storageService.open('device')
         ).createContext('data');
@@ -108,7 +112,7 @@ export class Bridge {
         const discriminator =
             environment.vars.number('discriminator') ??
             (await deviceStorage.get('discriminator', 3840));
-        // product name / id and vendor id should match what is in the device certificate
+
         const vendorId =
             environment.vars.number('vendorid') ??
             (await deviceStorage.get('vendorid', 0xfff1));
