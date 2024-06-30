@@ -4,6 +4,7 @@ import { HAMiddleware } from '../home-assistant/HAmiddleware.js';
 import { HassEntity } from '../home-assistant/HAssTypes.js';
 import { Bridge } from '../matter/Bridge.js';
 import { setLights } from './devices/lights/index.js';
+import { setWindowCovers } from './devices/window-covers/index.js';
 
 const LOGGER = new Logger('Mapper');
 const entitiesToFunction = new Map<
@@ -15,7 +16,8 @@ const entitiesToFunction = new Map<
     ) => void
 >([
     ['light', setLights],
-    // ['cover', setWindowCovers],
+
+    ['cover', setWindowCovers],
 ]);
 
 async function setHasEntities(
