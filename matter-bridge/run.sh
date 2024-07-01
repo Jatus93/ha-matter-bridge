@@ -1,3 +1,3 @@
 #!/usr/bin/with-contenv bashio
 
-yarn start
+yarn start --storage-path=/config/deviceData
