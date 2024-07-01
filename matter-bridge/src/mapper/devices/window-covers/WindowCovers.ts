@@ -11,6 +11,7 @@ import {
     AddHaDeviceToBridge,
     Bridge,
     HAMiddleware,
+    MapperElement,
 } from '../MapperType.js';
 import { Logger } from '@project-chip/matter-node.js/log';
 import pkg from 'crypto-js';
@@ -22,7 +23,7 @@ export const addWindowCover: AddHaDeviceToBridge = (
     haEntity: HassEntity,
     haMiddleware: HAMiddleware,
     bridge: Bridge,
-): Endpoint => {
+): MapperElement => {
     LOGGER.debug(
         `Building device ${haEntity.entity_id} \n ${JSON.stringify({
             haEntity,
@@ -43,6 +44,13 @@ export const addWindowCover: AddHaDeviceToBridge = (
         },
     );
 
+    const windowCover = new MapperElement(
+        haEntity,
+        haMiddleware,
+        bridge,
+        shadeEndpoint,
+    );
+
     shadeEndpoint.events.windowCovering.currentPositionLiftPercent100ths$Changed.on(
         async (value, oldValue) => {
             LOGGER.debug(
@@ -50,35 +58,38 @@ export const addWindowCover: AddHaDeviceToBridge = (
                 value,
                 oldValue,
             );
-
             if (value && value != oldValue) {
-                await haMiddleware.callAService(
-                    'cover',
-                    'set_cover_position',
-                    {
-                        entity_id: haEntity.entity_id,
-                        position: value! / 100,
-                    },
-                );
+                await windowCover.execWhenReady(async () => {
+                    await haMiddleware.callAService(
+                        'cover',
+                        'set_cover_position',
+                        {
+                            entity_id: haEntity.entity_id,
+                            position: value! / 100,
+                        },
+                    );
+                });
             }
         },
     );
 
     haMiddleware.subscribeToDevice(
         haEntity.entity_id,
-        (event: StateChangedEvent) => {
+        async (event: StateChangedEvent) => {
             LOGGER.debug(`Event for device ${haEntity.entity_id}`);
             LOGGER.debug(JSON.stringify(event));
-            shadeEndpoint.set({
-                windowCovering: {
-                    currentPositionLiftPercentage: event.data[
-                        'new_state'
-                    ]?.attributes['current_position'] as number,
-                },
+            await windowCover.execWhenReady(async () => {
+                await shadeEndpoint.set({
+                    windowCovering: {
+                        currentPositionLiftPercentage: event.data[
+                            'new_state'
+                        ]?.attributes['current_position'] as number,
+                    },
+                });
             });
         },
     );
 
     bridge.addEndpoint(shadeEndpoint);
-    return shadeEndpoint;
+    return windowCover;
 };

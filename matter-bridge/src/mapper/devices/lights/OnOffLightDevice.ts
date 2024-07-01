@@ -9,17 +9,19 @@ import {
     AddHaDeviceToBridge,
     Bridge,
     HAMiddleware,
+    MapperElement,
 } from '../MapperType.js';
 import { Logger } from '@project-chip/matter-node.js/log';
 import pkg from 'crypto-js';
 const { MD5 } = pkg;
 
 const LOGGER = new Logger('OnOffLight');
+
 export const addOnOffLightDevice: AddHaDeviceToBridge = (
     haEntity: HassEntity,
     haMiddleware: HAMiddleware,
     bridge: Bridge,
-): Endpoint => {
+): MapperElement => {
     LOGGER.debug(
         `Building device ${haEntity.entity_id} \n ${JSON.stringify({
             haEntity,
@@ -41,51 +43,54 @@ export const addOnOffLightDevice: AddHaDeviceToBridge = (
         },
     );
 
-    endpoint.events.onOff.onOff$Changed.on((value, oldValue) => {
-        LOGGER.debug(
-            `OnOff Event for device ${haEntity.entity_id}, ${JSON.stringify(
-                {
-                    value,
-                    oldValue,
-                },
-            )}`,
-        );
+    const onOffLightMapperElement = new MapperElement(
+        haEntity,
+        haMiddleware,
+        bridge,
+        endpoint,
+    );
 
-        if (value !== oldValue) {
-            haMiddleware.callAService(
-                'light',
-                value ? 'turn_on' : 'turn_off',
-                {
-                    entity_id: haEntity.entity_id,
-                },
+    endpoint.events.onOff.onOff$Changed.on(
+        async (value, oldValue) => {
+            LOGGER.debug(
+                `OnOff Event for device ${haEntity.entity_id}, ${JSON.stringify(
+                    {
+                        value,
+                        oldValue,
+                    },
+                )}`,
             );
-        }
-    });
 
-    endpoint.events.identify.startIdentifying.on(() => {
-        console.log(
-            `Run identify logic for ${haEntity.entity_id}, ideally blink a light every 0.5s ...`,
-        );
-    });
-
-    endpoint.events.identify.stopIdentifying.on(() => {
-        console.log(
-            `Stop identify logic for ${haEntity.entity_id} ...`,
-        );
-    });
+            if (value !== oldValue) {
+                await onOffLightMapperElement.execWhenReady(
+                    async () => {
+                        await haMiddleware.callAService(
+                            'light',
+                            value ? 'turn_on' : 'turn_off',
+                            {
+                                entity_id: haEntity.entity_id,
+                            },
+                        );
+                    },
+                );
+            }
+        },
+    );
 
     haMiddleware.subscribeToDevice(
         haEntity.entity_id,
-        (event: StateChangedEvent) => {
+        async (event: StateChangedEvent) => {
             LOGGER.debug(`Event for device ${haEntity.entity_id}`);
             LOGGER.debug(JSON.stringify(event));
-            endpoint.set({
-                onOff: {
-                    onOff: event.data.new_state?.state === 'on',
-                },
+            await onOffLightMapperElement.execWhenReady(async () => {
+                await endpoint.set({
+                    onOff: {
+                        onOff: event.data.new_state?.state === 'on',
+                    },
+                });
             });
         },
     );
     bridge.addEndpoint(endpoint);
-    return endpoint;
+    return onOffLightMapperElement;
 };
