@@ -4,6 +4,10 @@ import { execSync } from 'child_process';
 const envVar = process.env;
 console.debug({ envVar });
 
+export function sleep(ms: number): Promise<unknown> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export function getParameter(name: string) {
     return envVar[name];
 }

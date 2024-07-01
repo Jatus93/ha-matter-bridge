@@ -8,7 +8,9 @@ export class HAMiddleware {
     private static instance: HAMiddleware;
     private entities: { [k: string]: HassEntity } = {};
     private functionsToCallOnChange: {
-        [k: string]: ((data: StateChangedEvent) => void) | undefined;
+        [k: string]:
+            | ((data: StateChangedEvent) => Promise<void>)
+            | undefined;
     } = {};
 
     stop(): void {
@@ -23,20 +25,22 @@ export class HAMiddleware {
         await this.hassClient.callService(domain, service, extraArgs);
     }
 
-    subscribe() {
+    subscribe(): void {
         this.hassClient.on('state_changed', (event) => {
             this.logger.debug(JSON.stringify(event));
             const toDo =
                 this.functionsToCallOnChange[event.data.entity_id];
             if (toDo) {
-                toDo(event);
+                toDo(event)
+                    .then(this.logger.info)
+                    .catch(this.logger.error);
             }
         });
     }
 
     subscribeToDevice(
         deviceId: string,
-        fn: (event: StateChangedEvent) => void,
+        fn: (event: StateChangedEvent) => Promise<void>,
     ) {
         this.functionsToCallOnChange[deviceId] = fn;
         this.logger.debug(this.functionsToCallOnChange);
