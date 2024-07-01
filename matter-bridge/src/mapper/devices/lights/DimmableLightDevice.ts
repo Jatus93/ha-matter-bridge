@@ -12,15 +12,17 @@ import {
     AddHaDeviceToBridge,
     Bridge,
     HAMiddleware,
+    MapperElement,
 } from '../MapperType.js';
 import { Logger } from '@project-chip/matter-node.js/log';
 
 const LOGGER = new Logger('DimmableLight');
+
 export const addDimmableLightDevice: AddHaDeviceToBridge = (
     haEntity: HassEntity,
     haMiddleware: HAMiddleware,
     bridge: Bridge,
-): Endpoint => {
+): MapperElement => {
     LOGGER.debug(
         `Building device ${haEntity.entity_id} \n ${JSON.stringify({
             haEntity,
@@ -42,44 +44,68 @@ export const addDimmableLightDevice: AddHaDeviceToBridge = (
             },
         },
     );
-    endpoint.events.onOff.onOff$Changed.on((value, oldValue) => {
-        LOGGER.debug(
-            `OnOff Event for device ${haEntity.entity_id}, ${JSON.stringify(
-                {
-                    value,
-                    oldValue,
-                },
-            )}`,
-        );
-        if (value !== oldValue) {
-            haMiddleware.callAService(
-                'light',
-                value ? 'turn_on' : 'turn_off',
-                {
-                    entity_id: haEntity.entity_id,
+    const dimmableLightMapperElement = new MapperElement(
+        haEntity,
+        haMiddleware,
+        bridge,
+        endpoint,
+    );
+
+    endpoint.events.onOff.onOff$Changed.on(
+        async (value, oldValue) => {
+            LOGGER.debug(
+                `OnOff Event for device ${haEntity.entity_id}, ${JSON.stringify(
+                    {
+                        value,
+                        oldValue,
+                    },
+                )}`,
+            );
+            if (value !== oldValue) {
+                await dimmableLightMapperElement.execWhenReady(
+                    async () => {
+                        await haMiddleware.callAService(
+                            'light',
+                            value ? 'turn_on' : 'turn_off',
+                            {
+                                entity_id: haEntity.entity_id,
+                            },
+                        );
+                    },
+                );
+            }
+        },
+    );
+
+    endpoint.events.levelControl.currentLevel$Changed.on(
+        async (value) => {
+            LOGGER.debug(
+                `CurrentLevel Event for device ${haEntity.entity_id} value: ${value}`,
+            );
+            let extraArgs = {
+                entity_id: haEntity.entity_id,
+            } as object;
+            if (Number(value) > 0) {
+                extraArgs = {
+                    ...extraArgs,
+                    brightness: Number(value),
+                };
+            }
+            await dimmableLightMapperElement.execWhenReady(
+                async () => {
+                    await haMiddleware.callAService(
+                        'light',
+                        Number(value) > 0 ? 'turn_on' : 'turn_off',
+                        extraArgs,
+                    );
                 },
             );
-        }
-    });
-
-    endpoint.events.levelControl.currentLevel$Changed.on((value) => {
-        LOGGER.debug(
-            `CurrentLevel Event for device ${haEntity.entity_id} value: ${value}`,
-        );
-        let extraArgs = { entity_id: haEntity.entity_id } as object;
-        if (Number(value) > 0) {
-            extraArgs = { ...extraArgs, brightness: Number(value) };
-        }
-        haMiddleware.callAService(
-            'light',
-            Number(value) > 0 ? 'turn_on' : 'turn_off',
-            extraArgs,
-        );
-    });
+        },
+    );
 
     haMiddleware.subscribeToDevice(
         haEntity.entity_id,
-        (event: StateChangedEvent) => {
+        async (event: StateChangedEvent) => {
             LOGGER.debug(`Event for device ${haEntity.entity_id}`);
             LOGGER.debug(JSON.stringify(event));
             let brightness: number = Number(
@@ -88,18 +114,23 @@ export const addDimmableLightDevice: AddHaDeviceToBridge = (
                 ],
             );
             brightness = brightness > 254 ? 254 : brightness;
-            endpoint.set({
-                onOff: {
-                    onOff: event.data.new_state?.state === 'on',
+            await dimmableLightMapperElement.execWhenReady(
+                async () => {
+                    await endpoint.set({
+                        onOff: {
+                            onOff:
+                                event.data.new_state?.state === 'on',
+                        },
+                        levelControl: {
+                            currentLevel: brightness,
+                        },
+                    });
                 },
-                levelControl: {
-                    currentLevel: brightness,
-                },
-            });
+            );
         },
     );
 
     bridge.addEndpoint(endpoint);
 
-    return endpoint;
+    return dimmableLightMapperElement;
 };

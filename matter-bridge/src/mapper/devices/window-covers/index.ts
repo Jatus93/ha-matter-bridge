@@ -1,8 +1,11 @@
 import { HAMiddleware } from '../../../home-assistant/HAmiddleware.js';
 import { HassEntity } from '../../../home-assistant/HAssTypes.js';
-import { AddHaDeviceToBridge, Bridge } from '../MapperType.js';
+import {
+    AddHaDeviceToBridge,
+    Bridge,
+    MapperElement,
+} from '../MapperType.js';
 import { addWindowCover } from './WindowCovers.js';
-import { Endpoint } from '@project-chip/matter.js/endpoint';
 
 export * from './WindowCovers.js';
 
@@ -11,9 +14,9 @@ const WINDOW_COVERS_MAP_MAP_FUNCTIONS: Map<
     AddHaDeviceToBridge
 > = new Map<string, AddHaDeviceToBridge>([['cover', addWindowCover]]);
 
-const WINDOW_COVERS_MAP: Map<string, Endpoint> = new Map<
+const WINDOW_COVERS_MAP: Map<string, MapperElement> = new Map<
     string,
-    Endpoint
+    MapperElement
 >();
 
 export function setWindowCovers(
