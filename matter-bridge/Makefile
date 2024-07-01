@@ -5,7 +5,7 @@ tsc:
 	yarn build
 
 run:
-	yarn start
+	yarn start --storage-path=./config/deviceData
 
 example:
 	node ./build/example.js
