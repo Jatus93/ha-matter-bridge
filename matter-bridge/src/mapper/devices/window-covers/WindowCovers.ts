@@ -53,7 +53,7 @@ export const addWindowCover: AddHaDeviceToBridge = (
 
     shadeEndpoint.events.windowCovering.currentPositionLiftPercent100ths$Changed.on(
         async (value, oldValue) => {
-            LOGGER.debug(
+            console.debug(
                 `Assistant request for device ${haEntity.entity_id}`,
                 value,
                 oldValue,
@@ -76,14 +76,15 @@ export const addWindowCover: AddHaDeviceToBridge = (
     haMiddleware.subscribeToDevice(
         haEntity.entity_id,
         async (event: StateChangedEvent) => {
-            LOGGER.debug(`Event for device ${haEntity.entity_id}`);
-            LOGGER.debug(JSON.stringify(event));
+            console.debug(`Event for device ${haEntity.entity_id}`);
+            console.debug(JSON.stringify(event));
             await windowCover.execWhenReady(async () => {
                 await shadeEndpoint.set({
                     windowCovering: {
-                        currentPositionLiftPercentage: event.data[
-                            'new_state'
-                        ]?.attributes['current_position'] as number,
+                        currentPositionLiftPercentage:
+                            (event.data['new_state']?.attributes[
+                                'current_position'
+                            ] as number) * 100,
                     },
                 });
             });
