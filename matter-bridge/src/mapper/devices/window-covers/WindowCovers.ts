@@ -13,6 +13,7 @@ import {
 } from '../MapperType.js';
 import { Logger } from '@project-chip/matter-node.js/log';
 import pkg from 'crypto-js';
+import { sleep } from '../../../utils/utils.js';
 const { MD5 } = pkg;
 
 const LOGGER = new Logger('WindowCover');
@@ -35,8 +36,59 @@ export const addWindowCover: AddHaDeviceToBridge = (
         'PositionAwareLift',
     );
 
+    class CustomWindowCoveringServer extends LiftingWindowCoveringServer {
+        static readonly DEFAULT_SLEEP = 200;
+        updatePending = false;
+
+        async awaitUpdate(): Promise<void> {
+            LOGGER.info('Waiting for the device to be ready');
+            while (this.updatePending) {
+                await sleep(MapperElement.DEFAULT_SLEEP);
+            }
+            LOGGER.info('Device ready');
+        }
+
+        setUpdating(pending: boolean): void {
+            this.updatePending = pending;
+        }
+
+        async execWhenReady(fn: () => Promise<void>): Promise<void> {
+            await this.awaitUpdate();
+            this.setUpdating(true);
+            await fn();
+            this.setUpdating(false);
+        }
+
+        override async upOrOpen(): Promise<void> {
+            await super.upOrOpen();
+            await this.execWhenReady(async () => {
+                await haMiddleware.callAService(
+                    'cover',
+                    'set_cover_position',
+                    {
+                        entity_id: haEntity.entity_id,
+                        position: 100,
+                    },
+                );
+            });
+        }
+        override async downOrClose(): Promise<void> {
+            await super.downOrClose();
+            await this.execWhenReady(async () => {
+                await haMiddleware.callAService(
+                    'cover',
+                    'set_cover_position',
+                    {
+                        entity_id: haEntity.entity_id,
+                        position: 0,
+                    },
+                );
+            });
+        }
+    }
+
     const shadeEndpoint = new Endpoint(
-        WindowCoveringDevice.with(LiftingWindowCoveringServer),
+        WindowCoveringDevice.with(CustomWindowCoveringServer),
         {
             id: `ha-window-cover-${serialFromId}`,
         },
