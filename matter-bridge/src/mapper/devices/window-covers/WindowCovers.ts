@@ -37,12 +37,12 @@ export const addWindowCover: AddHaDeviceToBridge = (
     );
 
     class CustomWindowCoveringServer extends LiftingWindowCoveringServer {
-        static readonly DEFAULT_SLEEP = 200;
+        static readonly DEFAULT_SLEEP = 10;
         updatePending = false;
 
         async awaitUpdate(): Promise<void> {
-            LOGGER.info('Waiting for the device to be ready');
             while (this.updatePending) {
+                LOGGER.info('Waiting for the device to be ready');
                 await sleep(MapperElement.DEFAULT_SLEEP);
             }
             LOGGER.info('Device ready');
@@ -60,7 +60,7 @@ export const addWindowCover: AddHaDeviceToBridge = (
         }
 
         override async upOrOpen(): Promise<void> {
-            await super.upOrOpen();
+            LOGGER.info('Up or open invoked');
             await this.execWhenReady(async () => {
                 await haMiddleware.callAService(
                     'cover',
@@ -73,7 +73,7 @@ export const addWindowCover: AddHaDeviceToBridge = (
             });
         }
         override async downOrClose(): Promise<void> {
-            await super.downOrClose();
+            LOGGER.info('Down or close invoked');
             await this.execWhenReady(async () => {
                 await haMiddleware.callAService(
                     'cover',

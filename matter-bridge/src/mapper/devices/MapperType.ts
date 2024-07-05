@@ -18,7 +18,7 @@ export { Bridge };
 const LOGGER = new Logger('MapperElement');
 
 export class MapperElement {
-    static readonly DEFAULT_SLEEP = 200;
+    static readonly DEFAULT_SLEEP = 10;
     protected haEntity: HassEntity;
     protected haMiddleware: HAMiddleware;
     protected bridge: Bridge;
