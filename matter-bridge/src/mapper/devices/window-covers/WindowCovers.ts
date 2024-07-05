@@ -1,4 +1,8 @@
-import { WindowCoveringServer } from '@project-chip/matter.js/behavior/definitions/window-covering';
+import {
+    MovementDirection,
+    MovementType,
+    WindowCoveringServer,
+} from '@project-chip/matter.js/behavior/definitions/window-covering';
 import { WindowCoveringDevice } from '@project-chip/matter.js/devices/WindowCoveringDevice';
 import { Endpoint } from '@project-chip/matter.js/endpoint';
 import {
@@ -85,6 +89,82 @@ export const addWindowCover: AddHaDeviceToBridge = (
                 );
             });
         }
+
+        override async handleMovement(
+            type: MovementType,
+            reversed: boolean,
+            direction: MovementDirection,
+            targetPercent100ths?: number,
+        ): Promise<void> {
+            LOGGER.debug(
+                'handleMovement',
+                { type },
+                { reversed },
+                { direction },
+                { targetPercent100ths },
+            );
+            if (targetPercent100ths) {
+                await mapperObject.execWhenReady(async () => {
+                    try {
+                        await haMiddleware.callAService(
+                            'cover',
+                            'set_cover_position',
+                            {
+                                entity_id: haEntity.entity_id,
+                                position: targetPercent100ths / 100,
+                            },
+                        );
+                    } catch (error) {
+                        LOGGER.error(
+                            'Could not handle device change:',
+                            haEntity.entity_id,
+                            'Error:',
+                            error,
+                        );
+                    }
+                });
+            } else if (direction === MovementDirection.Open) {
+                await mapperObject.execWhenReady(async () => {
+                    try {
+                        await haMiddleware.callAService(
+                            'cover',
+                            'set_cover_position',
+                            {
+                                entity_id: haEntity.entity_id,
+                                position: 100,
+                            },
+                        );
+                    } catch (error) {
+                        LOGGER.error(
+                            'Could not handle device change:',
+                            haEntity.entity_id,
+                            'Error:',
+                            error,
+                        );
+                    }
+                });
+            } else if (direction === MovementDirection.Close) {
+                await mapperObject.execWhenReady(async () => {
+                    try {
+                        await haMiddleware.callAService(
+                            'cover',
+                            'set_cover_position',
+                            {
+                                entity_id: haEntity.entity_id,
+                                position: 0,
+                            },
+                        );
+                    } catch (error) {
+                        LOGGER.error(
+                            'Could not handle device change:',
+                            haEntity.entity_id,
+                            'Error:',
+                            error,
+                        );
+                    }
+                });
+            }
+        }
     }
 
     const shadeEndpoint = new Endpoint(
@@ -101,36 +181,36 @@ export const addWindowCover: AddHaDeviceToBridge = (
         shadeEndpoint,
     );
 
-    shadeEndpoint.events.windowCovering.currentPositionLiftPercent100ths$Changed.on(
-        async (value, oldValue) => {
-            console.debug(
-                `Assistant request for device ${haEntity.entity_id}`,
-                value,
-                oldValue,
-            );
-            if (value && value != oldValue) {
-                await mapperObject.execWhenReady(async () => {
-                    try {
-                        await haMiddleware.callAService(
-                            'cover',
-                            'set_cover_position',
-                            {
-                                entity_id: haEntity.entity_id,
-                                position: value! / 100,
-                            },
-                        );
-                    } catch (error) {
-                        LOGGER.error(
-                            'Could not handle device change:',
-                            haEntity.entity_id,
-                            'Error:',
-                            error,
-                        );
-                    }
-                });
-            }
-        },
-    );
+    // shadeEndpoint.events.windowCovering.currentPositionLiftPercent100ths$Changed.on(
+    //     async (value, oldValue) => {
+    //         console.debug(
+    //             `Assistant request for device ${haEntity.entity_id}`,
+    //             value,
+    //             oldValue,
+    //         );
+    //         if (value && value != oldValue) {
+    //             await mapperObject.execWhenReady(async () => {
+    //                 try {
+    //                     await haMiddleware.callAService(
+    //                         'cover',
+    //                         'set_cover_position',
+    //                         {
+    //                             entity_id: haEntity.entity_id,
+    //                             position: value! / 100,
+    //                         },
+    //                     );
+    //                 } catch (error) {
+    //                     LOGGER.error(
+    //                         'Could not handle device change:',
+    //                         haEntity.entity_id,
+    //                         'Error:',
+    //                         error,
+    //                     );
+    //                 }
+    //             });
+    //         }
+    //     },
+    // );
 
     haMiddleware.subscribeToDevice(
         haEntity.entity_id,
