@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Logger } from '@project-chip/matter-node.js/log';
 import { HAMiddleware } from '../home-assistant/HAmiddleware.js';
 import { HassEntity } from '../home-assistant/HAssTypes.js';
