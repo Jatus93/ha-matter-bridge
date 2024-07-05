@@ -1,13 +1,10 @@
 import { Logger } from '@project-chip/matter-node.js/log';
 import { HAMiddleware } from '../../../home-assistant/HAmiddleware.js';
 import { HassEntity } from '../../../home-assistant/HAssTypes.js';
-import {
-    AddHaDeviceToBridge,
-    Bridge,
-    MapperElement,
-} from '../MapperType.js';
+import { AddHaDeviceToBridge, Bridge } from '../MapperType.js';
 import { addDimmableLightDevice } from './DimmableLightDevice.js';
 import { addOnOffLightDevice } from './OnOffLightDevice.js';
+import { Endpoint } from '@project-chip/matter.js/endpoint';
 
 export * from './DimmableLightDevice.js';
 export * from './OnOffLightDevice.js';
@@ -21,10 +18,7 @@ const LIGHTS_MAP_FUNCTIONS: Map<string, AddHaDeviceToBridge> =
         ['brightness', addDimmableLightDevice],
     ]);
 
-const LIGHTS_MAP: Map<string, MapperElement> = new Map<
-    string,
-    MapperElement
->();
+const LIGHTS_MAP: Map<string, Endpoint> = new Map<string, Endpoint>();
 
 export function setLights(
     lights: HassEntity[],

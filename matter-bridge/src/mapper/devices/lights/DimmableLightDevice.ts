@@ -12,7 +12,6 @@ import {
     AddHaDeviceToBridge,
     Bridge,
     HAMiddleware,
-    MapperElement,
 } from '../MapperType.js';
 import { Logger } from '@project-chip/matter-node.js/log';
 
@@ -22,7 +21,7 @@ export const addDimmableLightDevice: AddHaDeviceToBridge = (
     haEntity: HassEntity,
     haMiddleware: HAMiddleware,
     bridge: Bridge,
-): MapperElement => {
+): Endpoint => {
     LOGGER.debug(
         `Building device ${haEntity.entity_id} \n ${JSON.stringify({
             haEntity,
@@ -44,12 +43,6 @@ export const addDimmableLightDevice: AddHaDeviceToBridge = (
             },
         },
     );
-    const dimmableLightMapperElement = new MapperElement(
-        haEntity,
-        haMiddleware,
-        bridge,
-        endpoint,
-    );
 
     endpoint.events.onOff.onOff$Changed.on(
         async (value, oldValue) => {
@@ -62,15 +55,11 @@ export const addDimmableLightDevice: AddHaDeviceToBridge = (
                 )}`,
             );
             if (value !== oldValue) {
-                await dimmableLightMapperElement.execWhenReady(
-                    async () => {
-                        await haMiddleware.callAService(
-                            'light',
-                            value ? 'turn_on' : 'turn_off',
-                            {
-                                entity_id: haEntity.entity_id,
-                            },
-                        );
+                await haMiddleware.callAService(
+                    'light',
+                    value ? 'turn_on' : 'turn_off',
+                    {
+                        entity_id: haEntity.entity_id,
                     },
                 );
             }
@@ -91,15 +80,21 @@ export const addDimmableLightDevice: AddHaDeviceToBridge = (
                     brightness: Number(value),
                 };
             }
-            await dimmableLightMapperElement.execWhenReady(
-                async () => {
-                    await haMiddleware.callAService(
-                        'light',
-                        Number(value) > 0 ? 'turn_on' : 'turn_off',
-                        extraArgs,
-                    );
-                },
-            );
+
+            try {
+                await haMiddleware.callAService(
+                    'light',
+                    Number(value) > 0 ? 'turn_on' : 'turn_off',
+                    extraArgs,
+                );
+            } catch (error) {
+                LOGGER.error(
+                    'Could not handle device change:',
+                    haEntity.entity_id,
+                    'Error:',
+                    error,
+                );
+            }
         },
     );
 
@@ -114,23 +109,28 @@ export const addDimmableLightDevice: AddHaDeviceToBridge = (
                 ],
             );
             brightness = brightness > 254 ? 254 : brightness;
-            await dimmableLightMapperElement.execWhenReady(
-                async () => {
-                    await endpoint.set({
-                        onOff: {
-                            onOff:
-                                event.data.new_state?.state === 'on',
-                        },
-                        levelControl: {
-                            currentLevel: brightness,
-                        },
-                    });
-                },
-            );
+
+            try {
+                await endpoint.set({
+                    onOff: {
+                        onOff: event.data.new_state?.state === 'on',
+                    },
+                    levelControl: {
+                        currentLevel: brightness,
+                    },
+                });
+            } catch (error) {
+                LOGGER.error(
+                    'Could not handle device set:',
+                    haEntity.entity_id,
+                    'Error:',
+                    error,
+                );
+            }
         },
     );
 
     bridge.addEndpoint(endpoint);
 
-    return dimmableLightMapperElement;
+    return endpoint;
 };

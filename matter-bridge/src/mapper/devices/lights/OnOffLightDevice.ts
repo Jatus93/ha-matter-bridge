@@ -9,7 +9,6 @@ import {
     AddHaDeviceToBridge,
     Bridge,
     HAMiddleware,
-    MapperElement,
 } from '../MapperType.js';
 import { Logger } from '@project-chip/matter-node.js/log';
 import pkg from 'crypto-js';
@@ -21,7 +20,7 @@ export const addOnOffLightDevice: AddHaDeviceToBridge = (
     haEntity: HassEntity,
     haMiddleware: HAMiddleware,
     bridge: Bridge,
-): MapperElement => {
+): Endpoint => {
     LOGGER.debug(
         `Building device ${haEntity.entity_id} \n ${JSON.stringify({
             haEntity,
@@ -43,13 +42,6 @@ export const addOnOffLightDevice: AddHaDeviceToBridge = (
         },
     );
 
-    const onOffLightMapperElement = new MapperElement(
-        haEntity,
-        haMiddleware,
-        bridge,
-        endpoint,
-    );
-
     endpoint.events.onOff.onOff$Changed.on(
         async (value, oldValue) => {
             LOGGER.debug(
@@ -62,17 +54,22 @@ export const addOnOffLightDevice: AddHaDeviceToBridge = (
             );
 
             if (value !== oldValue) {
-                await onOffLightMapperElement.execWhenReady(
-                    async () => {
-                        await haMiddleware.callAService(
-                            'light',
-                            value ? 'turn_on' : 'turn_off',
-                            {
-                                entity_id: haEntity.entity_id,
-                            },
-                        );
-                    },
-                );
+                try {
+                    await haMiddleware.callAService(
+                        'light',
+                        value ? 'turn_on' : 'turn_off',
+                        {
+                            entity_id: haEntity.entity_id,
+                        },
+                    );
+                } catch (error) {
+                    LOGGER.error(
+                        'Could not handle device change:',
+                        haEntity.entity_id,
+                        'Error:',
+                        error,
+                    );
+                }
             }
         },
     );
@@ -82,15 +79,22 @@ export const addOnOffLightDevice: AddHaDeviceToBridge = (
         async (event: StateChangedEvent) => {
             LOGGER.debug(`Event for device ${haEntity.entity_id}`);
             LOGGER.debug(JSON.stringify(event));
-            await onOffLightMapperElement.execWhenReady(async () => {
+            try {
                 await endpoint.set({
                     onOff: {
                         onOff: event.data.new_state?.state === 'on',
                     },
                 });
-            });
+            } catch (error) {
+                LOGGER.error(
+                    'Could not handle device set:',
+                    haEntity.entity_id,
+                    'Error:',
+                    error,
+                );
+            }
         },
     );
     bridge.addEndpoint(endpoint);
-    return onOffLightMapperElement;
+    return endpoint;
 };
