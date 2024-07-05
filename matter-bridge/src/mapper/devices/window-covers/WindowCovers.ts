@@ -1,7 +1,6 @@
 import '@project-chip/matter-node.js';
 import { WindowCoveringServer } from '@project-chip/matter.js/behavior/definitions/window-covering';
 import { WindowCoveringDevice } from '@project-chip/matter.js/devices/WindowCoveringDevice';
-
 import { Endpoint } from '@project-chip/matter.js/endpoint';
 import {
     HassEntity,
@@ -11,7 +10,6 @@ import {
     AddHaDeviceToBridge,
     Bridge,
     HAMiddleware,
-    MapperElement,
 } from '../MapperType.js';
 import { Logger } from '@project-chip/matter-node.js/log';
 import pkg from 'crypto-js';
@@ -23,7 +21,7 @@ export const addWindowCover: AddHaDeviceToBridge = (
     haEntity: HassEntity,
     haMiddleware: HAMiddleware,
     bridge: Bridge,
-): MapperElement => {
+): Endpoint => {
     LOGGER.debug(
         `Building device ${haEntity.entity_id} \n ${JSON.stringify({
             haEntity,
@@ -44,13 +42,6 @@ export const addWindowCover: AddHaDeviceToBridge = (
         },
     );
 
-    const windowCover = new MapperElement(
-        haEntity,
-        haMiddleware,
-        bridge,
-        shadeEndpoint,
-    );
-
     shadeEndpoint.events.windowCovering.currentPositionLiftPercent100ths$Changed.on(
         async (value, oldValue) => {
             console.debug(
@@ -59,7 +50,7 @@ export const addWindowCover: AddHaDeviceToBridge = (
                 oldValue,
             );
             if (value && value != oldValue) {
-                await windowCover.execWhenReady(async () => {
+                try {
                     await haMiddleware.callAService(
                         'cover',
                         'set_cover_position',
@@ -68,7 +59,14 @@ export const addWindowCover: AddHaDeviceToBridge = (
                             position: value! / 100,
                         },
                     );
-                });
+                } catch (error) {
+                    LOGGER.error(
+                        'Could not handle device change:',
+                        haEntity.entity_id,
+                        'Error:',
+                        error,
+                    );
+                }
             }
         },
     );
@@ -78,7 +76,7 @@ export const addWindowCover: AddHaDeviceToBridge = (
         async (event: StateChangedEvent) => {
             console.debug(`Event for device ${haEntity.entity_id}`);
             console.debug(JSON.stringify(event));
-            await windowCover.execWhenReady(async () => {
+            try {
                 await shadeEndpoint.set({
                     windowCovering: {
                         currentPositionLiftPercentage:
@@ -87,10 +85,17 @@ export const addWindowCover: AddHaDeviceToBridge = (
                             ] as number) * 100,
                     },
                 });
-            });
+            } catch (error) {
+                LOGGER.error(
+                    'Could not handle device set: ',
+                    haEntity.entity_id,
+                    'Error:',
+                    error,
+                );
+            }
         },
     );
 
     bridge.addEndpoint(shadeEndpoint);
-    return windowCover;
+    return shadeEndpoint;
 };
