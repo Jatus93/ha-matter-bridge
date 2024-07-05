@@ -1,4 +1,3 @@
-import '@project-chip/matter-node.js';
 import { WindowCoveringServer } from '@project-chip/matter.js/behavior/definitions/window-covering';
 import { WindowCoveringDevice } from '@project-chip/matter.js/devices/WindowCoveringDevice';
 import { Endpoint } from '@project-chip/matter.js/endpoint';
@@ -10,6 +9,7 @@ import {
     AddHaDeviceToBridge,
     Bridge,
     HAMiddleware,
+    MapperElement,
 } from '../MapperType.js';
 import { Logger } from '@project-chip/matter-node.js/log';
 import pkg from 'crypto-js';
@@ -21,7 +21,7 @@ export const addWindowCover: AddHaDeviceToBridge = (
     haEntity: HassEntity,
     haMiddleware: HAMiddleware,
     bridge: Bridge,
-): Endpoint => {
+): MapperElement => {
     LOGGER.debug(
         `Building device ${haEntity.entity_id} \n ${JSON.stringify({
             haEntity,
@@ -42,6 +42,13 @@ export const addWindowCover: AddHaDeviceToBridge = (
         },
     );
 
+    const mapperObject = new MapperElement(
+        haEntity,
+        haMiddleware,
+        bridge,
+        shadeEndpoint,
+    );
+
     shadeEndpoint.events.windowCovering.currentPositionLiftPercent100ths$Changed.on(
         async (value, oldValue) => {
             console.debug(
@@ -50,23 +57,25 @@ export const addWindowCover: AddHaDeviceToBridge = (
                 oldValue,
             );
             if (value && value != oldValue) {
-                try {
-                    await haMiddleware.callAService(
-                        'cover',
-                        'set_cover_position',
-                        {
-                            entity_id: haEntity.entity_id,
-                            position: value! / 100,
-                        },
-                    );
-                } catch (error) {
-                    LOGGER.error(
-                        'Could not handle device change:',
-                        haEntity.entity_id,
-                        'Error:',
-                        error,
-                    );
-                }
+                await mapperObject.execWhenReady(async () => {
+                    try {
+                        await haMiddleware.callAService(
+                            'cover',
+                            'set_cover_position',
+                            {
+                                entity_id: haEntity.entity_id,
+                                position: value! / 100,
+                            },
+                        );
+                    } catch (error) {
+                        LOGGER.error(
+                            'Could not handle device change:',
+                            haEntity.entity_id,
+                            'Error:',
+                            error,
+                        );
+                    }
+                });
             }
         },
     );
@@ -76,26 +85,30 @@ export const addWindowCover: AddHaDeviceToBridge = (
         async (event: StateChangedEvent) => {
             console.debug(`Event for device ${haEntity.entity_id}`);
             console.debug(JSON.stringify(event));
-            try {
-                await shadeEndpoint.set({
-                    windowCovering: {
-                        currentPositionLiftPercentage:
-                            (event.data['new_state']?.attributes[
+            await mapperObject.execWhenReady(async () => {
+                try {
+                    await shadeEndpoint.set({
+                        windowCovering: {
+                            currentPositionLiftPercentage: event.data[
+                                'new_state'
+                            ]?.attributes[
                                 'current_position'
-                            ] as number) * 100,
-                    },
-                });
-            } catch (error) {
-                LOGGER.error(
-                    'Could not handle device set: ',
-                    haEntity.entity_id,
-                    'Error:',
-                    error,
-                );
-            }
+                            ] as number,
+                        },
+                    });
+                    LOGGER.debug(shadeEndpoint.state.windowCovering);
+                } catch (error) {
+                    LOGGER.error(
+                        'Could not handle device set: ',
+                        haEntity.entity_id,
+                        'Error:',
+                        error,
+                    );
+                }
+            });
         },
     );
 
     bridge.addEndpoint(shadeEndpoint);
-    return shadeEndpoint;
+    return mapperObject;
 };

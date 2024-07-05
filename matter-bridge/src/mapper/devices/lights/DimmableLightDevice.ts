@@ -12,6 +12,7 @@ import {
     AddHaDeviceToBridge,
     Bridge,
     HAMiddleware,
+    MapperElement,
 } from '../MapperType.js';
 import { Logger } from '@project-chip/matter-node.js/log';
 
@@ -21,7 +22,7 @@ export const addDimmableLightDevice: AddHaDeviceToBridge = (
     haEntity: HassEntity,
     haMiddleware: HAMiddleware,
     bridge: Bridge,
-): Endpoint => {
+): MapperElement => {
     LOGGER.debug(
         `Building device ${haEntity.entity_id} \n ${JSON.stringify({
             haEntity,
@@ -42,6 +43,13 @@ export const addDimmableLightDevice: AddHaDeviceToBridge = (
                 serialNumber: serialFromId,
             },
         },
+    );
+
+    const mapperObject = new MapperElement(
+        haEntity,
+        haMiddleware,
+        bridge,
+        endpoint,
     );
 
     endpoint.events.onOff.onOff$Changed.on(
@@ -132,5 +140,5 @@ export const addDimmableLightDevice: AddHaDeviceToBridge = (
 
     bridge.addEndpoint(endpoint);
 
-    return endpoint;
+    return mapperObject;
 };
