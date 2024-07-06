@@ -13,11 +13,10 @@ import {
     AddHaDeviceToBridge,
     Bridge,
     HAMiddleware,
-    MapperElement,
+    StateQueue,
 } from '../MapperType.js';
 import { Logger } from '@project-chip/matter-node.js/log';
 import pkg from 'crypto-js';
-import { sleep } from '../../../utils/utils.js';
 const { MD5 } = pkg;
 
 const LOGGER = new Logger('WindowCover');
@@ -26,7 +25,7 @@ export const addWindowCover: AddHaDeviceToBridge = (
     haEntity: HassEntity,
     haMiddleware: HAMiddleware,
     bridge: Bridge,
-): MapperElement => {
+): StateQueue => {
     LOGGER.debug(
         `Building device ${haEntity.entity_id} \n ${JSON.stringify({
             haEntity,
@@ -40,130 +39,104 @@ export const addWindowCover: AddHaDeviceToBridge = (
         'PositionAwareLift',
     );
 
+    const stateQueue = new StateQueue();
+
     class CustomWindowCoveringServer extends LiftingWindowCoveringServer {
-        static readonly DEFAULT_SLEEP = 10;
-        updatePending = false;
+        // upOrOpen(): void {
+        //     LOGGER.info('Up or open invoked');
+        //     stateQueue.addFunctionToQueue(async () => {
+        //         await haMiddleware.callAService(
+        //             'cover',
+        //             'set_cover_position',
+        //             {
+        //                 entity_id: haEntity.entity_id,
+        //                 position: 100,
+        //             },
+        //         );
+        //     });
+        // }
 
-        async awaitUpdate(): Promise<void> {
-            while (this.updatePending) {
-                LOGGER.info('Waiting for the device to be ready');
-                await sleep(MapperElement.DEFAULT_SLEEP);
-            }
-            LOGGER.info('Device ready');
-        }
+        // downOrClose(): void {
+        //     LOGGER.info('Down or close invoked');
+        //     stateQueue.addFunctionToQueue(async () => {
+        //         await haMiddleware.callAService(
+        //             'cover',
+        //             'set_cover_position',
+        //             {
+        //                 entity_id: haEntity.entity_id,
+        //                 position: 0,
+        //             },
+        //         );
+        //     });
+        // }
 
-        setUpdating(pending: boolean): void {
-            this.updatePending = pending;
-        }
-
-        async execWhenReady(fn: () => Promise<void>): Promise<void> {
-            await this.awaitUpdate();
-            this.setUpdating(true);
-            await fn();
-            this.setUpdating(false);
-        }
-
-        override async upOrOpen(): Promise<void> {
-            LOGGER.info('Up or open invoked');
-            await this.execWhenReady(async () => {
-                await haMiddleware.callAService(
-                    'cover',
-                    'set_cover_position',
-                    {
-                        entity_id: haEntity.entity_id,
-                        position: 100,
-                    },
-                );
-            });
-        }
-        override async downOrClose(): Promise<void> {
-            LOGGER.info('Down or close invoked');
-            await this.execWhenReady(async () => {
-                await haMiddleware.callAService(
-                    'cover',
-                    'set_cover_position',
-                    {
-                        entity_id: haEntity.entity_id,
-                        position: 0,
-                    },
-                );
-            });
-        }
-
-        override async handleMovement(
+        handleMovement(
             type: MovementType,
             reversed: boolean,
             direction: MovementDirection,
             targetPercent100ths?: number,
         ): Promise<void> {
-            LOGGER.debug(
-                'handleMovement',
-                { type },
-                { reversed },
-                { direction },
-                { targetPercent100ths },
-            );
             if (targetPercent100ths) {
-                await mapperObject.execWhenReady(async () => {
-                    try {
-                        await haMiddleware.callAService(
-                            'cover',
-                            'set_cover_position',
-                            {
-                                entity_id: haEntity.entity_id,
-                                position: targetPercent100ths / 100,
-                            },
-                        );
-                    } catch (error) {
-                        LOGGER.error(
-                            'Could not handle device change:',
-                            haEntity.entity_id,
-                            'Error:',
-                            error,
-                        );
-                    }
-                });
-            } else if (direction === MovementDirection.Open) {
-                await mapperObject.execWhenReady(async () => {
-                    try {
-                        await haMiddleware.callAService(
-                            'cover',
-                            'set_cover_position',
-                            {
-                                entity_id: haEntity.entity_id,
-                                position: 100,
-                            },
-                        );
-                    } catch (error) {
-                        LOGGER.error(
-                            'Could not handle device change:',
-                            haEntity.entity_id,
-                            'Error:',
-                            error,
-                        );
-                    }
-                });
-            } else if (direction === MovementDirection.Close) {
-                await mapperObject.execWhenReady(async () => {
-                    try {
-                        await haMiddleware.callAService(
-                            'cover',
-                            'set_cover_position',
-                            {
-                                entity_id: haEntity.entity_id,
-                                position: 0,
-                            },
-                        );
-                    } catch (error) {
-                        LOGGER.error(
-                            'Could not handle device change:',
-                            haEntity.entity_id,
-                            'Error:',
-                            error,
-                        );
-                    }
+                return new Promise((resolve, rejects) => {
+                    stateQueue.addFunctionToQueue(async () => {
+                        try {
+                            await haMiddleware.callAService(
+                                'cover',
+                                'set_cover_position',
+                                {
+                                    entity_id: haEntity.entity_id,
+                                    position:
+                                        targetPercent100ths / 100,
+                                },
+                            );
+                        } catch (error) {
+                            return rejects(error);
+                        }
+                        resolve();
+                    });
                 });
             }
+            if (direction === MovementDirection.Open) {
+                return new Promise((resolve, rejects) => {
+                    stateQueue.addFunctionToQueue(async () => {
+                        try {
+                            await haMiddleware.callAService(
+                                'cover',
+                                'set_cover_position',
+                                {
+                                    entity_id: haEntity.entity_id,
+                                    position: 100,
+                                },
+                            );
+                        } catch (error) {
+                            return rejects(error);
+                        }
+                        resolve();
+                    });
+                });
+            }
+            if (direction === MovementDirection.Close) {
+                return new Promise((resolve, rejects) => {
+                    stateQueue.addFunctionToQueue(async () => {
+                        try {
+                            await haMiddleware.callAService(
+                                'cover',
+                                'set_cover_position',
+                                {
+                                    entity_id: haEntity.entity_id,
+                                    position: 0,
+                                },
+                            );
+                        } catch (error) {
+                            return rejects(error);
+                        }
+                        resolve();
+                    });
+                });
+            }
+            return new Promise((resolve) => {
+                resolve();
+            });
         }
     }
 
@@ -171,53 +144,23 @@ export const addWindowCover: AddHaDeviceToBridge = (
         WindowCoveringDevice.with(CustomWindowCoveringServer),
         {
             id: `ha-window-cover-${serialFromId}`,
+            windowCovering: {
+                currentPositionLiftPercent100ths: haEntity.attributes[
+                    'current_position'
+                ] as number,
+                mode: { motorDirectionReversed: true },
+                installedOpenLimitLift: 0,
+                installedClosedLimitLift: 100,
+            },
         },
     );
 
-    const mapperObject = new MapperElement(
-        haEntity,
-        haMiddleware,
-        bridge,
-        shadeEndpoint,
-    );
-
-    // shadeEndpoint.events.windowCovering.currentPositionLiftPercent100ths$Changed.on(
-    //     async (value, oldValue) => {
-    //         console.debug(
-    //             `Assistant request for device ${haEntity.entity_id}`,
-    //             value,
-    //             oldValue,
-    //         );
-    //         if (value && value != oldValue) {
-    //             await mapperObject.execWhenReady(async () => {
-    //                 try {
-    //                     await haMiddleware.callAService(
-    //                         'cover',
-    //                         'set_cover_position',
-    //                         {
-    //                             entity_id: haEntity.entity_id,
-    //                             position: value! / 100,
-    //                         },
-    //                     );
-    //                 } catch (error) {
-    //                     LOGGER.error(
-    //                         'Could not handle device change:',
-    //                         haEntity.entity_id,
-    //                         'Error:',
-    //                         error,
-    //                     );
-    //                 }
-    //             });
-    //         }
-    //     },
-    // );
-
     haMiddleware.subscribeToDevice(
         haEntity.entity_id,
-        async (event: StateChangedEvent) => {
+        (event: StateChangedEvent) => {
             console.debug(`Event for device ${haEntity.entity_id}`);
             console.debug(JSON.stringify(event));
-            await mapperObject.execWhenReady(async () => {
+            stateQueue.addFunctionToQueue(async () => {
                 try {
                     await shadeEndpoint.set({
                         windowCovering: {
@@ -242,5 +185,5 @@ export const addWindowCover: AddHaDeviceToBridge = (
     );
 
     bridge.addEndpoint(shadeEndpoint);
-    return mapperObject;
+    return stateQueue;
 };

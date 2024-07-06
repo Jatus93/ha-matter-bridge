@@ -1,5 +1,6 @@
-import { Endpoint } from '@project-chip/matter.js/endpoint';
+// import { Endpoint } from '@project-chip/matter.js/endpoint';
 import { HassEntity } from '../../home-assistant/HAssTypes.js';
+import { EventEmitter } from 'events';
 
 import { HAMiddleware } from '../../home-assistant/HAmiddleware.js';
 import { Bridge } from '../../matter/Bridge.js';
@@ -10,51 +11,58 @@ export type AddHaDeviceToBridge = (
     haEntity: HassEntity,
     haMiddleware: HAMiddleware,
     bridge: Bridge,
-) => MapperElement;
+) => StateQueue;
 
 export { HAMiddleware };
 export { Bridge };
 
 const LOGGER = new Logger('MapperElement');
 
-export class MapperElement {
+export class StateQueue extends EventEmitter {
     static readonly DEFAULT_SLEEP = 10;
-    protected haEntity: HassEntity;
-    protected haMiddleware: HAMiddleware;
-    protected bridge: Bridge;
-    protected endpoint: Endpoint;
     protected updatePending = false;
-    constructor(
-        haEntity: HassEntity,
-        haMiddleware: HAMiddleware,
-        bridge: Bridge,
-        endpoint: Endpoint,
-    ) {
-        this.haEntity = haEntity;
-        this.bridge = bridge;
-        this.haMiddleware = haMiddleware;
-        this.endpoint = endpoint;
-    }
-    get updating(): boolean {
-        return this.updatePending;
+    protected dequeuing = false;
+
+    private queue: (() => Promise<void>)[] = [];
+
+    constructor() {
+        super();
+        this.on('newStateRequested', this.runUtilEmpty);
     }
 
-    async awaitUpdate(): Promise<void> {
+    protected async runUtilEmpty(): Promise<void> {
+        if (this.dequeuing) {
+            return;
+        }
+        this.dequeuing = true;
+        while (this.queue.length) {
+            const fn = this.queue.shift();
+            if (fn) {
+                await this.execWhenReady(fn);
+            }
+        }
+        this.dequeuing = false;
+    }
+
+    private async awaitUpdate(): Promise<void> {
         LOGGER.info('Waiting for the device to be ready');
         while (this.updatePending) {
-            await sleep(MapperElement.DEFAULT_SLEEP);
+            await sleep(StateQueue.DEFAULT_SLEEP);
         }
         LOGGER.info('Device ready');
     }
 
-    setUpdating(pending: boolean): void {
-        this.updatePending = pending;
+    private async execWhenReady(
+        fn: () => Promise<void>,
+    ): Promise<void> {
+        await this.awaitUpdate();
+        this.updatePending = true;
+        await fn();
+        this.updatePending = false;
     }
 
-    async execWhenReady(fn: () => Promise<void>): Promise<void> {
-        await this.awaitUpdate();
-        this.setUpdating(true);
-        await fn();
-        this.setUpdating(false);
+    addFunctionToQueue(fn: () => Promise<void>): void {
+        this.queue.push(fn);
+        this.emit('newStateRequested');
     }
 }

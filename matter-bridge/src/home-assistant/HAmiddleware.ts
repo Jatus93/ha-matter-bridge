@@ -9,7 +9,7 @@ export class HAMiddleware {
     private entities: { [k: string]: HassEntity } = {};
     private functionsToCallOnChange: {
         [k: string]:
-            | ((data: StateChangedEvent) => Promise<void>)
+            | ((data: StateChangedEvent) => Promise<void> | void)
             | undefined;
     } = {};
 
@@ -32,15 +32,15 @@ export class HAMiddleware {
                 this.functionsToCallOnChange[event.data.entity_id];
             if (toDo) {
                 toDo(event)
-                    .then(this.logger.info)
-                    .catch(this.logger.error);
+                    ?.then(this.logger.info)
+                    ?.catch(this.logger.error);
             }
         });
     }
 
     subscribeToDevice(
         deviceId: string,
-        fn: (event: StateChangedEvent) => Promise<void>,
+        fn: (event: StateChangedEvent) => Promise<void> | void,
     ) {
         this.functionsToCallOnChange[deviceId] = fn;
         this.logger.debug(this.functionsToCallOnChange);

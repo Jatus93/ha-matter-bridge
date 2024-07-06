@@ -4,7 +4,7 @@ import { HassEntity } from '../../../home-assistant/HAssTypes.js';
 import {
     AddHaDeviceToBridge,
     Bridge,
-    MapperElement,
+    StateQueue,
 } from '../MapperType.js';
 import { addDimmableLightDevice } from './DimmableLightDevice.js';
 import { addOnOffLightDevice } from './OnOffLightDevice.js';
@@ -21,9 +21,9 @@ const LIGHTS_MAP_FUNCTIONS: Map<string, AddHaDeviceToBridge> =
         ['brightness', addDimmableLightDevice],
     ]);
 
-const LIGHTS_MAP: Map<string, MapperElement> = new Map<
+const LIGHTS_MAP: Map<string, StateQueue> = new Map<
     string,
-    MapperElement
+    StateQueue
 >();
 
 export function setLights(

@@ -3,7 +3,7 @@ import { HassEntity } from '../../../home-assistant/HAssTypes.js';
 import {
     AddHaDeviceToBridge,
     Bridge,
-    MapperElement,
+    StateQueue,
 } from '../MapperType.js';
 import { addWindowCover } from './WindowCovers.js';
 
@@ -14,9 +14,9 @@ const WINDOW_COVERS_MAP_MAP_FUNCTIONS: Map<
     AddHaDeviceToBridge
 > = new Map<string, AddHaDeviceToBridge>([['cover', addWindowCover]]);
 
-const WINDOW_COVERS_MAP: Map<string, MapperElement> = new Map<
+const WINDOW_COVERS_MAP: Map<string, StateQueue> = new Map<
     string,
-    MapperElement
+    StateQueue
 >();
 
 export function setWindowCovers(

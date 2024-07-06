@@ -12,7 +12,7 @@ import {
     AddHaDeviceToBridge,
     Bridge,
     HAMiddleware,
-    MapperElement,
+    StateQueue,
 } from '../MapperType.js';
 import { Logger } from '@project-chip/matter-node.js/log';
 
@@ -22,7 +22,7 @@ export const addDimmableLightDevice: AddHaDeviceToBridge = (
     haEntity: HassEntity,
     haMiddleware: HAMiddleware,
     bridge: Bridge,
-): MapperElement => {
+): StateQueue => {
     LOGGER.debug(
         `Building device ${haEntity.entity_id} \n ${JSON.stringify({
             haEntity,
@@ -45,24 +45,19 @@ export const addDimmableLightDevice: AddHaDeviceToBridge = (
         },
     );
 
-    const mapperObject = new MapperElement(
-        haEntity,
-        haMiddleware,
-        bridge,
-        endpoint,
-    );
+    const stateQueue = new StateQueue();
 
-    endpoint.events.onOff.onOff$Changed.on(
-        async (value, oldValue) => {
-            LOGGER.debug(
-                `OnOff Event for device ${haEntity.entity_id}, ${JSON.stringify(
-                    {
-                        value,
-                        oldValue,
-                    },
-                )}`,
-            );
-            if (value !== oldValue) {
+    endpoint.events.onOff.onOff$Changed.on((value, oldValue) => {
+        LOGGER.debug(
+            `OnOff Event for device ${haEntity.entity_id}, ${JSON.stringify(
+                {
+                    value,
+                    oldValue,
+                },
+            )}`,
+        );
+        if (value !== oldValue) {
+            stateQueue.addFunctionToQueue(async () => {
                 await haMiddleware.callAService(
                     'light',
                     value ? 'turn_on' : 'turn_off',
@@ -70,15 +65,15 @@ export const addDimmableLightDevice: AddHaDeviceToBridge = (
                         entity_id: haEntity.entity_id,
                     },
                 );
-            }
-        },
-    );
+            });
+        }
+    });
 
-    endpoint.events.levelControl.currentLevel$Changed.on(
-        async (value) => {
-            LOGGER.debug(
-                `CurrentLevel Event for device ${haEntity.entity_id} value: ${value}`,
-            );
+    endpoint.events.levelControl.currentLevel$Changed.on((value) => {
+        LOGGER.debug(
+            `CurrentLevel Event for device ${haEntity.entity_id} value: ${value}`,
+        );
+        stateQueue.addFunctionToQueue(async () => {
             let extraArgs = {
                 entity_id: haEntity.entity_id,
             } as object;
@@ -103,12 +98,12 @@ export const addDimmableLightDevice: AddHaDeviceToBridge = (
                     error,
                 );
             }
-        },
-    );
+        });
+    });
 
     haMiddleware.subscribeToDevice(
         haEntity.entity_id,
-        async (event: StateChangedEvent) => {
+        (event: StateChangedEvent) => {
             LOGGER.debug(`Event for device ${haEntity.entity_id}`);
             LOGGER.debug(JSON.stringify(event));
             let brightness: number = Number(
@@ -117,28 +112,30 @@ export const addDimmableLightDevice: AddHaDeviceToBridge = (
                 ],
             );
             brightness = brightness > 254 ? 254 : brightness;
-
-            try {
-                await endpoint.set({
-                    onOff: {
-                        onOff: event.data.new_state?.state === 'on',
-                    },
-                    levelControl: {
-                        currentLevel: brightness,
-                    },
-                });
-            } catch (error) {
-                LOGGER.error(
-                    'Could not handle device set:',
-                    haEntity.entity_id,
-                    'Error:',
-                    error,
-                );
-            }
+            stateQueue.addFunctionToQueue(async () => {
+                try {
+                    await endpoint.set({
+                        onOff: {
+                            onOff:
+                                event.data.new_state?.state === 'on',
+                        },
+                        levelControl: {
+                            currentLevel: brightness,
+                        },
+                    });
+                } catch (error) {
+                    LOGGER.error(
+                        'Could not handle device set:',
+                        haEntity.entity_id,
+                        'Error:',
+                        error,
+                    );
+                }
+            });
         },
     );
 
     bridge.addEndpoint(endpoint);
 
-    return mapperObject;
+    return stateQueue;
 };

@@ -9,7 +9,7 @@ import {
     AddHaDeviceToBridge,
     Bridge,
     HAMiddleware,
-    MapperElement,
+    StateQueue,
 } from '../MapperType.js';
 import { Logger } from '@project-chip/matter-node.js/log';
 import pkg from 'crypto-js';
@@ -21,7 +21,7 @@ export const addOnOffLightDevice: AddHaDeviceToBridge = (
     haEntity: HassEntity,
     haMiddleware: HAMiddleware,
     bridge: Bridge,
-): MapperElement => {
+): StateQueue => {
     LOGGER.debug(
         `Building device ${haEntity.entity_id} \n ${JSON.stringify({
             haEntity,
@@ -40,28 +40,24 @@ export const addOnOffLightDevice: AddHaDeviceToBridge = (
                 reachable: true,
                 serialNumber: serialFromId,
             },
+            onOff: { onOff: haEntity.state === 'on' },
         },
     );
 
-    const mapperObject = new MapperElement(
-        haEntity,
-        haMiddleware,
-        bridge,
-        endpoint,
-    );
+    const stateQueue = new StateQueue();
 
-    endpoint.events.onOff.onOff$Changed.on(
-        async (value, oldValue) => {
-            LOGGER.debug(
-                `OnOff Event for device ${haEntity.entity_id}, ${JSON.stringify(
-                    {
-                        value,
-                        oldValue,
-                    },
-                )}`,
-            );
+    endpoint.events.onOff.onOff$Changed.on((value, oldValue) => {
+        LOGGER.debug(
+            `OnOff Event for device ${haEntity.entity_id}, ${JSON.stringify(
+                {
+                    value,
+                    oldValue,
+                },
+            )}`,
+        );
 
-            if (value !== oldValue) {
+        if (value !== oldValue) {
+            stateQueue.addFunctionToQueue(async () => {
                 try {
                     await haMiddleware.callAService(
                         'light',
@@ -78,31 +74,34 @@ export const addOnOffLightDevice: AddHaDeviceToBridge = (
                         error,
                     );
                 }
-            }
-        },
-    );
+            });
+        }
+    });
 
     haMiddleware.subscribeToDevice(
         haEntity.entity_id,
-        async (event: StateChangedEvent) => {
+        (event: StateChangedEvent) => {
             LOGGER.debug(`Event for device ${haEntity.entity_id}`);
             LOGGER.debug(JSON.stringify(event));
-            try {
-                await endpoint.set({
-                    onOff: {
-                        onOff: event.data.new_state?.state === 'on',
-                    },
-                });
-            } catch (error) {
-                LOGGER.error(
-                    'Could not handle device set:',
-                    haEntity.entity_id,
-                    'Error:',
-                    error,
-                );
-            }
+            stateQueue.addFunctionToQueue(async () => {
+                try {
+                    await endpoint.set({
+                        onOff: {
+                            onOff:
+                                event.data.new_state?.state === 'on',
+                        },
+                    });
+                } catch (error) {
+                    LOGGER.error(
+                        'Could not handle device set:',
+                        haEntity.entity_id,
+                        'Error:',
+                        error,
+                    );
+                }
+            });
         },
     );
     bridge.addEndpoint(endpoint);
-    return mapperObject;
+    return stateQueue;
 };
