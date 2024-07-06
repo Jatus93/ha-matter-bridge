@@ -42,34 +42,6 @@ export const addWindowCover: AddHaDeviceToBridge = (
     const stateQueue = new StateQueue();
 
     class CustomWindowCoveringServer extends LiftingWindowCoveringServer {
-        // upOrOpen(): void {
-        //     LOGGER.info('Up or open invoked');
-        //     stateQueue.addFunctionToQueue(async () => {
-        //         await haMiddleware.callAService(
-        //             'cover',
-        //             'set_cover_position',
-        //             {
-        //                 entity_id: haEntity.entity_id,
-        //                 position: 100,
-        //             },
-        //         );
-        //     });
-        // }
-
-        // downOrClose(): void {
-        //     LOGGER.info('Down or close invoked');
-        //     stateQueue.addFunctionToQueue(async () => {
-        //         await haMiddleware.callAService(
-        //             'cover',
-        //             'set_cover_position',
-        //             {
-        //                 entity_id: haEntity.entity_id,
-        //                 position: 0,
-        //             },
-        //         );
-        //     });
-        // }
-
         handleMovement(
             type: MovementType,
             reversed: boolean,
@@ -148,9 +120,7 @@ export const addWindowCover: AddHaDeviceToBridge = (
                 currentPositionLiftPercent100ths: haEntity.attributes[
                     'current_position'
                 ] as number,
-                mode: { motorDirectionReversed: true },
-                installedOpenLimitLift: 0,
-                installedClosedLimitLift: 100,
+                configStatus: { liftPositionAware: true },
             },
         },
     );
