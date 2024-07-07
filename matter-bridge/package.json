@@ -3,7 +3,7 @@
     "main": "index.js",
     "type": "module",
     "scripts": {
-        "build": "tsc",
+        "build": "tsc --project tsconfig.json && tsc-alias -p tsconfig.json",
         "start": "node ./build/index.js",
         "lint": "eslint .",
         "lint-fix": "eslint --fix .",
@@ -16,8 +16,7 @@
         "@project-chip/matter-node.js": "^0.9.3",
         "@types/node": "18.18",
         "crypto-js": "^4.2.0",
-        "homeassistant-ws": "^0.2.2",
-        "ws": "^8.16.0"
+        "ws": "^8.18.0"
     },
     "devDependencies": {
         "@semantic-release/changelog": "^6.0.3",
@@ -43,6 +42,7 @@
         "semantic-release-replace-plugin": "^1.2.7",
         "standard-version": "^9.5.0",
         "ts-node": "^10.9.2",
+        "tsc-alias": "^1.8.10",
         "typescript": "5.3.3"
     },
     "config": {

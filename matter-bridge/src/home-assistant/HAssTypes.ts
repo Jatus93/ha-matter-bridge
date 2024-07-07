@@ -5,10 +5,44 @@ export type Error = 1 | 2 | 3 | 4;
 
 export type UnsubscribeFunc = () => void;
 
+const messageTypeString = [
+    'subscribe_trigger',
+    'subscribe_events',
+    'unsubscribe_events',
+    'event',
+    'result',
+    'fire_event',
+    'call_service',
+    'get_states',
+    'get_config',
+    'get_services',
+    'get_panels',
+    'ping',
+    'pong',
+    'validate_config',
+] as const;
+
+type MessageTypes = (typeof messageTypeString)[number];
+
 export type MessageBase = {
-    id?: number;
-    type: string;
+    id: number;
+    type: MessageTypes;
     [key: string]: unknown;
+};
+
+export type BaseResponse = MessageBase & {
+    success: boolean;
+};
+
+export type Event = MessageBase & {
+    type: 'event';
+    event: StateChangedEvent;
+};
+
+export type FireEventMessage = MessageBase & {
+    type: 'fire_event';
+    event_type: string;
+    event_data: { device_id: string; type: string };
 };
 
 export type Context = {
@@ -135,4 +169,11 @@ export type HassServiceTarget = {
     entity_id?: string | string[];
     device_id?: string | string[];
     area_id?: string | string[];
+};
+
+export type HAmiddlewareConfig = {
+    host: string;
+    port: number;
+    path: string;
+    token: string;
 };

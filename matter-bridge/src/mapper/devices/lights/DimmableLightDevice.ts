@@ -4,10 +4,7 @@ import { BridgedDeviceBasicInformationServer } from '@project-chip/matter.js/beh
 
 import pkg from 'crypto-js';
 const { MD5 } = pkg;
-import {
-    HassEntity,
-    StateChangedEvent,
-} from '../../../home-assistant/HAssTypes.js';
+import { HassEntity, StateChangedEvent } from '@ha/HAssTypes.js';
 import {
     AddHaDeviceToBridge,
     Bridge,
@@ -75,12 +72,12 @@ export const addDimmableLightDevice: AddHaDeviceToBridge = (
         );
         stateQueue.addFunctionToQueue(async () => {
             let extraArgs = {
-                entity_id: haEntity.entity_id,
+                target: { entity_id: haEntity.entity_id },
             } as object;
             if (Number(value) > 0) {
                 extraArgs = {
                     ...extraArgs,
-                    brightness: Number(value),
+                    service_data: { brightness: Number(value) },
                 };
             }
 
@@ -106,23 +103,39 @@ export const addDimmableLightDevice: AddHaDeviceToBridge = (
         (event: StateChangedEvent) => {
             LOGGER.debug(`Event for device ${haEntity.entity_id}`);
             LOGGER.debug(JSON.stringify(event));
-            let brightness: number = Number(
+            let newBrightness: number = Number(
                 (event.data.new_state?.attributes as never)[
                     'brightness'
                 ],
             );
-            brightness = brightness > 254 ? 254 : brightness;
+            let oldBrightness: number = Number(
+                (event.data.new_state?.attributes as never)[
+                    'brightness'
+                ],
+            );
+
+            newBrightness = newBrightness > 254 ? 254 : newBrightness;
+            oldBrightness = oldBrightness > 254 ? 254 : oldBrightness;
+            const currentLevel =
+                endpoint.state.levelControl.currentLevel;
+
             stateQueue.addFunctionToQueue(async () => {
                 try {
-                    await endpoint.set({
-                        onOff: {
-                            onOff:
-                                event.data.new_state?.state === 'on',
-                        },
-                        levelControl: {
-                            currentLevel: brightness,
-                        },
-                    });
+                    if (
+                        currentLevel !== newBrightness &&
+                        currentLevel !== oldBrightness
+                    ) {
+                        await endpoint.set({
+                            onOff: {
+                                onOff:
+                                    event.data.new_state?.state ===
+                                    'on',
+                            },
+                            levelControl: {
+                                currentLevel: newBrightness,
+                            },
+                        });
+                    }
                 } catch (error) {
                     LOGGER.error(
                         'Could not handle device set:',

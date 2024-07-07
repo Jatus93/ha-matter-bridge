@@ -1,10 +1,7 @@
 import { BridgedDeviceBasicInformationServer } from '@project-chip/matter.js/behavior/definitions/bridged-device-basic-information';
 import { OnOffLightDevice } from '@project-chip/matter.js/devices/OnOffLightDevice';
 import { Endpoint } from '@project-chip/matter.js/endpoint';
-import {
-    HassEntity,
-    StateChangedEvent,
-} from '../../../home-assistant/HAssTypes.js';
+import { HassEntity, StateChangedEvent } from '@ha/HAssTypes.js';
 import {
     AddHaDeviceToBridge,
     Bridge,
@@ -63,7 +60,7 @@ export const addOnOffLightDevice: AddHaDeviceToBridge = (
                         'light',
                         value ? 'turn_on' : 'turn_off',
                         {
-                            entity_id: haEntity.entity_id,
+                            target: { entity_id: haEntity.entity_id },
                         },
                     );
                 } catch (error) {

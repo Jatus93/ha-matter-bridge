@@ -1,10 +1,10 @@
 // import { Endpoint } from '@project-chip/matter.js/endpoint';
-import { HassEntity } from '../../home-assistant/HAssTypes.js';
+import { HassEntity } from '@ha/HAssTypes.js';
 import { EventEmitter } from 'events';
 
-import { HAMiddleware } from '../../home-assistant/HAmiddleware.js';
-import { Bridge } from '../../matter/Bridge.js';
-import { sleep } from '../../utils/utils.js';
+import { HAMiddleware } from '@ha/HAmiddleware.js';
+import { Bridge } from '@matter/Bridge.js';
+import { sleep } from '@utils/utils.js';
 import { Logger } from '@project-chip/matter-node.js/log';
 
 export type AddHaDeviceToBridge = (

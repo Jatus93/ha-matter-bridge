@@ -1,5 +1,5 @@
-import { HAMiddleware } from '../../../home-assistant/HAmiddleware.js';
-import { HassEntity } from '../../../home-assistant/HAssTypes.js';
+import { HAMiddleware } from '@ha/HAmiddleware.js';
+import { HassEntity } from '@ha/HAssTypes.js';
 import {
     AddHaDeviceToBridge,
     Bridge,
