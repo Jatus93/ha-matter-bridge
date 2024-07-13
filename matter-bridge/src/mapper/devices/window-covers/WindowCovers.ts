@@ -1,6 +1,5 @@
 import {
     MovementDirection,
-    MovementType,
     WindowCoveringServer,
 } from '@project-chip/matter.js/behavior/definitions/window-covering';
 import { WindowCoveringDevice } from '@project-chip/matter.js/devices/WindowCoveringDevice';
@@ -118,51 +117,6 @@ export const addWindowCover: AddHaDeviceToBridge = (
         downOrClose(): MaybePromise {
             return this.directionMap[MovementDirection.Close];
         }
-
-        handleMovement(
-            type: MovementType,
-            reversed: boolean,
-            direction: MovementDirection,
-            targetPercent100ths?: number,
-        ): Promise<void> {
-            console.log({
-                handleMovement: {
-                    type,
-                    reversed,
-                    direction,
-                    targetPercent100ths,
-                },
-            });
-            if (
-                targetPercent100ths &&
-                this.state.currentPositionLiftPercent100ths !==
-                    targetPercent100ths
-            ) {
-                return new Promise((resolve, rejects) => {
-                    stateQueue.addFunctionToQueue(async () => {
-                        try {
-                            await haMiddleware.callAService(
-                                'cover',
-                                'set_cover_position',
-                                {
-                                    service_data: {
-                                        position:
-                                            targetPercent100ths / 100,
-                                    },
-                                    target: {
-                                        entity_id: haEntity.entity_id,
-                                    },
-                                },
-                            );
-                        } catch (error) {
-                            return rejects(error);
-                        }
-                        resolve();
-                    });
-                });
-            }
-            return this.directionMap[direction];
-        }
     }
 
     const shadeEndpoint = new Endpoint(
@@ -170,13 +124,44 @@ export const addWindowCover: AddHaDeviceToBridge = (
         {
             id: `ha-window-cover-${serialFromId}`,
             windowCovering: {
-                configStatus: {
-                    liftMovementReversed: true,
-                },
-                currentPositionLiftPercentage: Number(
-                    haEntity.attributes['current_position'],
-                ),
+                currentPositionLiftPercent100ths:
+                    Number(haEntity.attributes['current_position']) *
+                    100,
             },
+        },
+    );
+
+    shadeEndpoint.events.windowCovering.currentPositionLiftPercent100ths$Changed.on(
+        (value, oldValue) => {
+            LOGGER.info(
+                'Request changing from: ',
+                oldValue,
+                'to:',
+                value,
+            );
+            stateQueue.addFunctionToQueue(async () => {
+                try {
+                    await haMiddleware.callAService(
+                        'cover',
+                        'set_cover_position',
+                        {
+                            service_data: {
+                                position: value! / 100,
+                            },
+                            target: {
+                                entity_id: haEntity.entity_id,
+                            },
+                        },
+                    );
+                } catch (error) {
+                    LOGGER.error(
+                        'Could not handle chaning status: ',
+                        haEntity.entity_id,
+                        'Error:',
+                        error,
+                    );
+                }
+            });
         },
     );
 
@@ -188,21 +173,22 @@ export const addWindowCover: AddHaDeviceToBridge = (
             const validState =
                 event.data.new_state?.state === 'open' ||
                 event.data.new_state?.state === 'close';
-            const targetPosition = event.data['new_state']
-                ?.attributes['current_position'] as number;
+            const targetPosition =
+                (event.data['new_state']?.attributes[
+                    'current_position'
+                ] as number) * 100;
             if (
                 validState &&
                 shadeEndpoint.state.windowCovering
-                    .currentPositionLiftPercentage !== targetPosition
+                    .currentPositionLiftPercent100ths !==
+                    targetPosition
             ) {
                 stateQueue.addFunctionToQueue(async () => {
                     try {
                         await shadeEndpoint.set({
                             windowCovering: {
-                                currentPositionLiftPercentage: event
-                                    .data['new_state']?.attributes[
-                                    'current_position'
-                                ] as number,
+                                currentPositionLiftPercent100ths:
+                                    targetPosition,
                             },
                         });
                         LOGGER.debug(
