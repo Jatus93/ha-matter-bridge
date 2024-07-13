@@ -8,4 +8,4 @@ run:
 	yarn start --storage-path=./config/deviceData
 
 example:
-	node ./build/hapoc.js
+	node ./build/example.js

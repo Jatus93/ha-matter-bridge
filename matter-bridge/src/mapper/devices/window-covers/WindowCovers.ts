@@ -185,27 +185,39 @@ export const addWindowCover: AddHaDeviceToBridge = (
         (event: StateChangedEvent) => {
             console.debug(`Event for device ${haEntity.entity_id}`);
             console.debug(JSON.stringify(event));
-            stateQueue.addFunctionToQueue(async () => {
-                try {
-                    await shadeEndpoint.set({
-                        windowCovering: {
-                            currentPositionLiftPercentage: event.data[
-                                'new_state'
-                            ]?.attributes[
-                                'current_position'
-                            ] as number,
-                        },
-                    });
-                    LOGGER.debug(shadeEndpoint.state.windowCovering);
-                } catch (error) {
-                    LOGGER.error(
-                        'Could not handle device set: ',
-                        haEntity.entity_id,
-                        'Error:',
-                        error,
-                    );
-                }
-            });
+            const validState =
+                event.data.new_state?.state === 'open' ||
+                event.data.new_state?.state === 'close';
+            const targetPosition = event.data['new_state']
+                ?.attributes['current_position'] as number;
+            if (
+                validState &&
+                shadeEndpoint.state.windowCovering
+                    .currentPositionLiftPercentage !== targetPosition
+            ) {
+                stateQueue.addFunctionToQueue(async () => {
+                    try {
+                        await shadeEndpoint.set({
+                            windowCovering: {
+                                currentPositionLiftPercentage: event
+                                    .data['new_state']?.attributes[
+                                    'current_position'
+                                ] as number,
+                            },
+                        });
+                        LOGGER.debug(
+                            shadeEndpoint.state.windowCovering,
+                        );
+                    } catch (error) {
+                        LOGGER.error(
+                            'Could not handle device set: ',
+                            haEntity.entity_id,
+                            'Error:',
+                            error,
+                        );
+                    }
+                });
+            }
         },
     );
 
