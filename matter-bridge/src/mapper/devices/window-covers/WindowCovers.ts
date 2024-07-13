@@ -123,11 +123,6 @@ export const addWindowCover: AddHaDeviceToBridge = (
         WindowCoveringDevice.with(CustomWindowCoveringServer),
         {
             id: `ha-window-cover-${serialFromId}`,
-            windowCovering: {
-                currentPositionLiftPercent100ths:
-                    Number(haEntity.attributes['current_position']) *
-                    100,
-            },
         },
     );
 
@@ -169,6 +164,13 @@ export const addWindowCover: AddHaDeviceToBridge = (
         haEntity.entity_id,
         (event: StateChangedEvent) => {
             console.debug(`Event for device ${haEntity.entity_id}`);
+            const currentPosition =
+                event.data['new_state']?.attributes[
+                    'current_position'
+                ] || undefined;
+            if (currentPosition === undefined) {
+                return;
+            }
             console.debug(JSON.stringify(event));
             const validState =
                 event.data.new_state?.state === 'open' ||
