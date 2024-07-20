@@ -52,7 +52,7 @@ export class HAMiddleware {
     }
 
     requestHandler(message: MessageBase): Promise<BaseResponse> {
-        console.debug(
+        this.logger.debug(
             'requestHandler',
             JSON.stringify({ message }, null, 4),
         );
@@ -66,7 +66,7 @@ export class HAMiddleware {
                 const decoded = JSON.parse(
                     HAMiddleware.decoder.decode(data as Buffer),
                 ) as BaseResponse;
-                console.debug('requestHandler', decoded);
+                this.logger.debug('requestHandler', decoded);
                 if (decoded.id === message.id) {
                     this.ws.off('message', responseHandler);
                     return resolve(decoded);
@@ -122,9 +122,9 @@ export class HAMiddleware {
             id: this.lastMessageNumber++,
             type: 'get_states',
         };
-        console.info('GetStates()', { message });
+        this.logger.info('GetStates()', { message });
         const serviceResponse = await this.requestHandler(message);
-        console.info('GetStates()', { serviceResponse });
+        this.logger.info('GetStates()', { serviceResponse });
         const states = serviceResponse.result as HassEntity[];
         const sorted = states.reduceRight<{
             [k: string]: HassEntity;

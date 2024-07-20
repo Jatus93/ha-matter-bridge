@@ -1,8 +1,9 @@
 import {
-    MovementDirection,
+    GoToLiftPercentageRequest,
     WindowCoveringServer,
 } from '@project-chip/matter.js/behavior/definitions/window-covering';
 import { WindowCoveringDevice } from '@project-chip/matter.js/devices/WindowCoveringDevice';
+import { WindowCovering } from '@project-chip/matter.js/cluster';
 import { Endpoint } from '@project-chip/matter.js/endpoint';
 import { HassEntity, StateChangedEvent } from '@ha/HAssTypes.js';
 import {
@@ -13,7 +14,6 @@ import {
 } from '../MapperType.js';
 import { Logger } from '@project-chip/matter-node.js/log';
 import pkg from 'crypto-js';
-import { MaybePromise } from '@project-chip/matter-node.js/util';
 const { MD5 } = pkg;
 
 const LOGGER = new Logger('WindowCover');
@@ -39,100 +39,20 @@ export const addWindowCover: AddHaDeviceToBridge = (
     const stateQueue = new StateQueue();
 
     class CustomWindowCoveringServer extends LiftingWindowCoveringServer {
-        private directionMap: {
-            [k in MovementDirection]: Promise<void>;
-        } = {
-            [MovementDirection.Open]: new Promise(
-                (resolve, rejects) => {
-                    stateQueue.addFunctionToQueue(async () => {
-                        try {
-                            await haMiddleware.callAService(
-                                'cover',
-                                'open_cover',
-                                {
-                                    target: {
-                                        entity_id: haEntity.entity_id,
-                                    },
-                                },
-                            );
-                        } catch (error) {
-                            return rejects(error);
-                        }
-                        resolve();
-                    });
-                },
-            ),
-            [MovementDirection.Close]: new Promise(
-                (resolve, rejects) => {
-                    stateQueue.addFunctionToQueue(async () => {
-                        try {
-                            await haMiddleware.callAService(
-                                'cover',
-                                'close_cover',
-                                {
-                                    target: {
-                                        entity_id: haEntity.entity_id,
-                                    },
-                                },
-                            );
-                        } catch (error) {
-                            return rejects(error);
-                        }
-                        resolve();
-                    });
-                },
-            ),
-            [MovementDirection.DefinedByPosition]: new Promise(
-                (resolve) => {
-                    LOGGER.info('Called Direction by position');
-                    return resolve();
-                },
-            ),
-        };
-        stopMotion(): MaybePromise {
-            return new Promise((resolve, rejects) => {
-                stateQueue.addFunctionToQueue(async () => {
-                    try {
-                        await haMiddleware.callAService(
-                            'cover',
-                            'stop_cover',
-                            {
-                                target: {
-                                    entity_id: haEntity.entity_id,
-                                },
-                            },
-                        );
-                    } catch (error) {
-                        return rejects(error);
-                    }
-                    resolve();
-                });
-            });
-        }
+        logger = new Logger(haEntity.entity_id.toUpperCase());
 
-        upOrOpen(): MaybePromise {
-            return this.directionMap[MovementDirection.Open];
-        }
-
-        downOrClose(): MaybePromise {
-            return this.directionMap[MovementDirection.Close];
-        }
-    }
-
-    const shadeEndpoint = new Endpoint(
-        WindowCoveringDevice.with(CustomWindowCoveringServer),
-        {
-            id: `ha-window-cover-${serialFromId}`,
-        },
-    );
-
-    shadeEndpoint.events.windowCovering.currentPositionLiftPercent100ths$Changed.on(
-        (value, oldValue) => {
-            LOGGER.info(
-                'Request changing from: ',
-                oldValue,
-                'to:',
-                value,
+        override async goToLiftPercentage(
+            request: GoToLiftPercentageRequest,
+        ): Promise<void> {
+            this.logger.info(
+                'goToLiftPercentage',
+                JSON.stringify(
+                    {
+                        request,
+                    },
+                    null,
+                    4,
+                ),
             );
             stateQueue.addFunctionToQueue(async () => {
                 try {
@@ -141,29 +61,45 @@ export const addWindowCover: AddHaDeviceToBridge = (
                         'set_cover_position',
                         {
                             service_data: {
-                                position: value! / 100,
+                                position:
+                                    100 -
+                                    Number(
+                                        request.liftPercent100thsValue,
+                                    ) /
+                                        100,
                             },
                             target: {
-                                entity_id: haEntity.entity_id,
+                                entity_id:
+                                    'cover.tapparella_cameretta',
                             },
                         },
                     );
                 } catch (error) {
-                    LOGGER.error(
-                        'Could not handle chaning status: ',
-                        haEntity.entity_id,
-                        'Error:',
-                        error,
-                    );
+                    console.error(error);
                 }
             });
+            await super.goToLiftPercentage(request);
+        }
+    }
+
+    const shadeEndpoint = new Endpoint(
+        WindowCoveringDevice.with(CustomWindowCoveringServer),
+        {
+            id: `ha-window-cover-${serialFromId}`,
+            windowCovering: {
+                configStatus: {
+                    operational: true,
+                    liftPositionAware: true,
+                },
+                type: WindowCovering.EndProductType.RollerShutter,
+            },
         },
     );
 
     haMiddleware.subscribeToDevice(
         haEntity.entity_id,
         (event: StateChangedEvent) => {
-            console.debug(`Event for device ${haEntity.entity_id}`);
+            LOGGER.info(`Event for device ${haEntity.entity_id}`);
             const currentPosition =
                 event.data['new_state']?.attributes[
                     'current_position'
@@ -171,14 +107,16 @@ export const addWindowCover: AddHaDeviceToBridge = (
             if (currentPosition === undefined) {
                 return;
             }
-            console.debug(JSON.stringify(event));
+            LOGGER.debug(JSON.stringify(event));
             const validState =
                 event.data.new_state?.state === 'open' ||
                 event.data.new_state?.state === 'close';
             const targetPosition =
-                (event.data['new_state']?.attributes[
-                    'current_position'
-                ] as number) * 100;
+                (100 -
+                    (event.data['new_state']?.attributes[
+                        'current_position'
+                    ] as number)) *
+                100;
             if (
                 validState &&
                 shadeEndpoint.state.windowCovering

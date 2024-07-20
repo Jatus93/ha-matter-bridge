@@ -13,7 +13,7 @@
     "author": "",
     "license": "GPL-3.0",
     "dependencies": {
-        "@project-chip/matter-node.js": "^0.9.3",
+        "@project-chip/matter-node.js": "^0.9.4",
         "@types/node": "18.18",
         "crypto-js": "^4.2.0",
         "ws": "^8.18.0"
