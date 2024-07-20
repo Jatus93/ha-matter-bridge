@@ -3,7 +3,7 @@ import {
     WindowCoveringServer,
 } from '@project-chip/matter.js/behavior/definitions/window-covering';
 import { WindowCoveringDevice } from '@project-chip/matter.js/devices/WindowCoveringDevice';
-import { WindowCovering } from '@project-chip/matter.js/cluster';
+// import { WindowCovering } from '@project-chip/matter.js/cluster';
 import { Endpoint } from '@project-chip/matter.js/endpoint';
 import { HassEntity, StateChangedEvent } from '@ha/HAssTypes.js';
 import {
@@ -91,7 +91,6 @@ export const addWindowCover: AddHaDeviceToBridge = (
                     operational: true,
                     liftPositionAware: true,
                 },
-                type: WindowCovering.EndProductType.RollerShutter,
             },
         },
     );
