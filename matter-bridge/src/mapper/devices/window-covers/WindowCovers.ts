@@ -69,8 +69,7 @@ export const addWindowCover: AddHaDeviceToBridge = (
                                         100,
                             },
                             target: {
-                                entity_id:
-                                    'cover.tapparella_cameretta',
+                                entity_id: haEntity.entity_id,
                             },
                         },
                     );
