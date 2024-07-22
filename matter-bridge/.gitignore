@@ -3,3 +3,4 @@ deviceData
 .env
 build
 *.log
+example.ts

@@ -18,11 +18,11 @@ const { MD5 } = pkg;
 
 const LOGGER = new Logger('WindowCover');
 
-export const addWindowCover: AddHaDeviceToBridge = (
+export const addWindowCover: AddHaDeviceToBridge = async (
     haEntity: HassEntity,
     haMiddleware: HAMiddleware,
     bridge: Bridge,
-): StateQueue => {
+): Promise<StateQueue> => {
     LOGGER.debug(
         `Building device ${haEntity.entity_id} \n ${JSON.stringify({
             haEntity,
@@ -151,6 +151,6 @@ export const addWindowCover: AddHaDeviceToBridge = (
         },
     );
 
-    bridge.addEndpoint(shadeEndpoint);
+    await bridge.addEndpoint(shadeEndpoint);
     return stateQueue;
 };

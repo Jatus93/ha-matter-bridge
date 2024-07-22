@@ -1,7 +1,7 @@
+import { OnOffPlugInUnitDevice } from '@project-chip/matter.js/devices/OnOffPlugInUnitDevice';
 import { BridgedDeviceBasicInformationServer } from '@project-chip/matter.js/behavior/definitions/bridged-device-basic-information';
-import { OnOffLightDevice } from '@project-chip/matter.js/devices/OnOffLightDevice';
-import { Endpoint } from '@project-chip/matter.js/endpoint';
 import { HassEntity, StateChangedEvent } from '@ha/HAssTypes.js';
+
 import {
     AddHaDeviceToBridge,
     Bridge,
@@ -9,64 +9,22 @@ import {
     StateQueue,
 } from '../MapperType.js';
 import { Logger } from '@project-chip/matter-node.js/log';
-import pkg from 'crypto-js';
-const { MD5 } = pkg;
+import { Endpoint } from '@project-chip/matter.js/endpoint';
+import { MD5 } from 'crypto-js';
 
-export function getOnOffFunction(
-    logger: Logger,
-    entity_id: string,
-    stateQueue: StateQueue,
-    haMiddleware: HAMiddleware,
-) {
-    return (value: boolean, oldValue: boolean): void => {
-        logger.debug(
-            `OnOff Event for device ${entity_id}, ${JSON.stringify({
-                value,
-                oldValue,
-            })}`,
-        );
-
-        if (value !== oldValue) {
-            stateQueue.addFunctionToQueue(async () => {
-                try {
-                    await haMiddleware.callAService(
-                        'light',
-                        value ? 'turn_on' : 'turn_off',
-                        {
-                            target: { entity_id: entity_id },
-                        },
-                    );
-                } catch (error) {
-                    logger.error(
-                        'Could not handle device change:',
-                        entity_id,
-                        'Error:',
-                        error,
-                    );
-                }
-            });
-        }
-    };
-}
-
-export const addOnOffLightDevice: AddHaDeviceToBridge = async (
+export const getSwitchDeviceQueue: AddHaDeviceToBridge = async (
     haEntity: HassEntity,
     haMiddleware: HAMiddleware,
     bridge: Bridge,
 ): Promise<StateQueue> => {
-    const logger = new Logger(`OnOffLight ${haEntity.entity_id}`);
-
-    logger.debug(
-        `Building device ${haEntity.entity_id} \n ${JSON.stringify({
-            haEntity,
-        })}`,
-    );
+    const logger = new Logger(`SocketDevice ${haEntity.entity_id}`);
     const serialFromId = MD5(haEntity.entity_id).toString();
 
     const endpoint = new Endpoint(
-        OnOffLightDevice.with(BridgedDeviceBasicInformationServer),
+        OnOffPlugInUnitDevice.with(
+            BridgedDeviceBasicInformationServer,
+        ),
         {
-            id: `ha-light-${serialFromId}`,
             bridgedDeviceBasicInformation: {
                 nodeLabel: haEntity.attributes['friendly_name'],
                 productName: haEntity.attributes['friendly_name'],
@@ -79,13 +37,38 @@ export const addOnOffLightDevice: AddHaDeviceToBridge = async (
     );
 
     const stateQueue = new StateQueue();
-    const onOffFucntion = getOnOffFunction(
-        logger,
-        haEntity.entity_id,
-        stateQueue,
-        haMiddleware,
-    );
-    endpoint.events.onOff.onOff$Changed.on(onOffFucntion);
+
+    endpoint.events.onOff.onOff$Changed.on((value, oldValue) => {
+        logger.debug(
+            `OnOff Event for device ${haEntity.entity_id}, ${JSON.stringify(
+                {
+                    value,
+                    oldValue,
+                },
+            )}`,
+        );
+
+        if (value !== oldValue) {
+            stateQueue.addFunctionToQueue(async () => {
+                try {
+                    await haMiddleware.callAService(
+                        'socket',
+                        value ? 'turn_on' : 'turn_off',
+                        {
+                            target: { entity_id: haEntity.entity_id },
+                        },
+                    );
+                } catch (error) {
+                    logger.error(
+                        'Could not handle device change:',
+                        haEntity.entity_id,
+                        'Error:',
+                        error,
+                    );
+                }
+            });
+        }
+    });
 
     haMiddleware.subscribeToDevice(
         haEntity.entity_id,
@@ -111,6 +94,7 @@ export const addOnOffLightDevice: AddHaDeviceToBridge = async (
             });
         },
     );
+
     await bridge.addEndpoint(endpoint);
     return stateQueue;
 };

@@ -12,15 +12,55 @@ import {
     StateQueue,
 } from '../MapperType.js';
 import { Logger } from '@project-chip/matter-node.js/log';
+import { getOnOffFunction } from './OnOffLightDevice.js';
 
-const LOGGER = new Logger('DimmableLight');
+export function getDimFunction(
+    logger: Logger,
+    entity_id: string,
+    stateQueue: StateQueue,
+    haMiddleware: HAMiddleware,
+) {
+    return (value: number | null) => {
+        logger.debug(
+            `CurrentLevel Event for device ${entity_id} value: ${value}`,
+        );
+        stateQueue.addFunctionToQueue(async () => {
+            let extraArgs = {
+                target: { entity_id },
+            } as object;
+            if (Number(value) > 0) {
+                extraArgs = {
+                    ...extraArgs,
+                    service_data: { brightness: Number(value) },
+                };
+            }
 
-export const addDimmableLightDevice: AddHaDeviceToBridge = (
+            try {
+                await haMiddleware.callAService(
+                    'light',
+                    Number(value) > 0 ? 'turn_on' : 'turn_off',
+                    extraArgs,
+                );
+            } catch (error) {
+                logger.error(
+                    'Could not handle device change:',
+                    entity_id,
+                    'Error:',
+                    error,
+                );
+            }
+        });
+    };
+}
+
+export const addDimmableLightDevice: AddHaDeviceToBridge = async (
     haEntity: HassEntity,
     haMiddleware: HAMiddleware,
     bridge: Bridge,
-): StateQueue => {
-    LOGGER.debug(
+): Promise<StateQueue> => {
+    const logger = new Logger(`DimmableLight ${haEntity.entity_id}`);
+
+    logger.debug(
         `Building device ${haEntity.entity_id} \n ${JSON.stringify({
             haEntity,
         })}`,
@@ -44,65 +84,30 @@ export const addDimmableLightDevice: AddHaDeviceToBridge = (
 
     const stateQueue = new StateQueue();
 
-    endpoint.events.onOff.onOff$Changed.on((value, oldValue) => {
-        LOGGER.debug(
-            `OnOff Event for device ${haEntity.entity_id}, ${JSON.stringify(
-                {
-                    value,
-                    oldValue,
-                },
-            )}`,
-        );
-        if (value !== oldValue) {
-            stateQueue.addFunctionToQueue(async () => {
-                await haMiddleware.callAService(
-                    'light',
-                    value ? 'turn_on' : 'turn_off',
-                    {
-                        target: { entity_id: haEntity.entity_id },
-                    },
-                );
-            });
-        }
-    });
+    const onOffFunction = getOnOffFunction(
+        logger,
+        haEntity.entity_id,
+        stateQueue,
+        haMiddleware,
+    );
 
-    endpoint.events.levelControl.currentLevel$Changed.on((value) => {
-        LOGGER.debug(
-            `CurrentLevel Event for device ${haEntity.entity_id} value: ${value}`,
-        );
-        stateQueue.addFunctionToQueue(async () => {
-            let extraArgs = {
-                target: { entity_id: haEntity.entity_id },
-            } as object;
-            if (Number(value) > 0) {
-                extraArgs = {
-                    ...extraArgs,
-                    service_data: { brightness: Number(value) },
-                };
-            }
+    endpoint.events.onOff.onOff$Changed.on(onOffFunction);
 
-            try {
-                await haMiddleware.callAService(
-                    'light',
-                    Number(value) > 0 ? 'turn_on' : 'turn_off',
-                    extraArgs,
-                );
-            } catch (error) {
-                LOGGER.error(
-                    'Could not handle device change:',
-                    haEntity.entity_id,
-                    'Error:',
-                    error,
-                );
-            }
-        });
-    });
+    const dimmerFunction = getDimFunction(
+        logger,
+        haEntity.entity_id,
+        stateQueue,
+        haMiddleware,
+    );
+    endpoint.events.levelControl.currentLevel$Changed.on(
+        dimmerFunction,
+    );
 
     haMiddleware.subscribeToDevice(
         haEntity.entity_id,
         (event: StateChangedEvent) => {
-            LOGGER.debug(`Event for device ${haEntity.entity_id}`);
-            LOGGER.debug(JSON.stringify(event));
+            logger.debug(`Event for device ${haEntity.entity_id}`);
+            logger.debug(JSON.stringify(event));
             let newBrightness: number = Number(
                 (event.data.new_state?.attributes as never)[
                     'brightness'
@@ -137,7 +142,7 @@ export const addDimmableLightDevice: AddHaDeviceToBridge = (
                         });
                     }
                 } catch (error) {
-                    LOGGER.error(
+                    logger.error(
                         'Could not handle device set:',
                         haEntity.entity_id,
                         'Error:',
@@ -148,7 +153,7 @@ export const addDimmableLightDevice: AddHaDeviceToBridge = (
         },
     );
 
-    bridge.addEndpoint(endpoint);
+    await bridge.addEndpoint(endpoint);
 
     return stateQueue;
 };

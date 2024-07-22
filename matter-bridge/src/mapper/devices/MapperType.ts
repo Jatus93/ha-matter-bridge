@@ -11,7 +11,7 @@ export type AddHaDeviceToBridge = (
     haEntity: HassEntity,
     haMiddleware: HAMiddleware,
     bridge: Bridge,
-) => StateQueue;
+) => Promise<StateQueue>;
 
 export { HAMiddleware };
 export { Bridge };

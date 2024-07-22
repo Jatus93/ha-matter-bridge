@@ -5,35 +5,37 @@ import {
     Bridge,
     StateQueue,
 } from '../MapperType.js';
-import { addWindowCover } from './WindowCovers.js';
+import { getSwitchDeviceQueue } from './SwitchDevice.js';
 
-export * from './WindowCovers.js';
+export * from './SwitchDevice.js';
 
-const WINDOW_COVERS_MAP_MAP_FUNCTIONS: Map<
+const SOCKET_MAP_FUNCTION: Map<string, AddHaDeviceToBridge> = new Map<
     string,
     AddHaDeviceToBridge
-> = new Map<string, AddHaDeviceToBridge>([['cover', addWindowCover]]);
+>([
+    ['switch', getSwitchDeviceQueue],
+    ['scene', getSwitchDeviceQueue],
+]);
 
-const WINDOW_COVERS_MAP: Map<string, StateQueue> = new Map<
+const SOCKET_MAP: Map<string, StateQueue> = new Map<
     string,
     StateQueue
 >();
 
-export function setWindowCovers(
+export function setSwitches(
     windowCovers: HassEntity[],
     haMiddleware: HAMiddleware,
     bridge: Bridge,
 ) {
     windowCovers.forEach(async (entity) => {
         const key = 'cover';
-        const windoCoverFunction =
-            WINDOW_COVERS_MAP_MAP_FUNCTIONS.get(key);
-        if (!windoCoverFunction) {
+        const socketDevice = SOCKET_MAP_FUNCTION.get(key);
+        if (!socketDevice) {
             throw new Error('Missing ' + key);
         }
-        WINDOW_COVERS_MAP.set(
+        SOCKET_MAP.set(
             entity.entity_id,
-            await windoCoverFunction(entity, haMiddleware, bridge),
+            await socketDevice(entity, haMiddleware, bridge),
         );
     });
 }

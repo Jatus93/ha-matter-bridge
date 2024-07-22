@@ -8,6 +8,7 @@ import {
 } from '../MapperType.js';
 import { addDimmableLightDevice } from './DimmableLightDevice.js';
 import { addOnOffLightDevice } from './OnOffLightDevice.js';
+import { addRGBLightDevice } from './RGBLighDevice.js';
 
 export * from './DimmableLightDevice.js';
 export * from './OnOffLightDevice.js';
@@ -17,7 +18,7 @@ const LOGGER = new Logger('Lights');
 const LIGHTS_MAP_FUNCTIONS: Map<string, AddHaDeviceToBridge> =
     new Map<string, AddHaDeviceToBridge>([
         ['onoff', addOnOffLightDevice],
-        ['rgb', addDimmableLightDevice],
+        ['rgb', addRGBLightDevice],
         ['brightness', addDimmableLightDevice],
     ]);
 
@@ -31,7 +32,7 @@ export function setLights(
     haMiddleware: HAMiddleware,
     bridge: Bridge,
 ) {
-    lights.forEach((entity) => {
+    lights.forEach(async (entity) => {
         LOGGER.info({
             colormodes: entity.attributes['supported_color_modes'],
         });
@@ -45,7 +46,7 @@ export function setLights(
         }
         LIGHTS_MAP.set(
             entity.entity_id,
-            lightBuildFunction(entity, haMiddleware, bridge),
+            await lightBuildFunction(entity, haMiddleware, bridge),
         );
     });
 }
