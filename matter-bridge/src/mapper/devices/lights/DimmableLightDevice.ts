@@ -59,7 +59,7 @@ export const addDimmableLightDevice: AddHaDeviceToBridge = (
                     'light',
                     value ? 'turn_on' : 'turn_off',
                     {
-                        entity_id: haEntity.entity_id,
+                        target: { entity_id: haEntity.entity_id },
                     },
                 );
             });
