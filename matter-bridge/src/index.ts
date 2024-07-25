@@ -21,10 +21,7 @@ async function run() {
         path: getParameter('HA_PATH') || '/core/websocket',
         token,
     });
-    HA_MIDDLEWARE.callAService('light', 'turn_off', {
-        target: { entity_id: 'light.dimmer_luce' },
-        service_data: { brightness: 0 },
-    });
+
     LOGGER.info('Connected to home assistant');
     BRIDGE = await Bridge.create();
     LOGGER.info('Creating the bridge');
