@@ -21,7 +21,8 @@ async function run() {
         path: getParameter('HA_PATH') || '/core/websocket',
         token,
     });
-
+    const states = await HA_MIDDLEWARE.getStates();
+    console.log(JSON.stringify(states, null, 4));
     LOGGER.info('Connected to home assistant');
     BRIDGE = await Bridge.create();
     LOGGER.info('Creating the bridge');

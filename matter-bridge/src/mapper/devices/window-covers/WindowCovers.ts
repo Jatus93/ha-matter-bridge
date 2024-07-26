@@ -16,14 +16,14 @@ import { Logger } from '@project-chip/matter-node.js/log';
 import pkg from 'crypto-js';
 const { MD5 } = pkg;
 
-const LOGGER = new Logger('WindowCover');
-
 export const addWindowCover: AddHaDeviceToBridge = async (
     haEntity: HassEntity,
     haMiddleware: HAMiddleware,
     bridge: Bridge,
 ): Promise<StateQueue> => {
-    LOGGER.debug(
+    const logger = new Logger(`WindowCover ${haEntity.entity_id}`);
+
+    logger.debug(
         `Building device ${haEntity.entity_id} \n ${JSON.stringify({
             haEntity,
         })}`,
@@ -36,7 +36,7 @@ export const addWindowCover: AddHaDeviceToBridge = async (
         'PositionAwareLift',
     );
 
-    const stateQueue = new StateQueue();
+    const stateQueue = new StateQueue(haEntity, haMiddleware, logger);
 
     class CustomWindowCoveringServer extends LiftingWindowCoveringServer {
         logger = new Logger(haEntity.entity_id.toUpperCase());
@@ -100,10 +100,15 @@ export const addWindowCover: AddHaDeviceToBridge = async (
         },
     );
 
+    stateQueue.on(
+        `stateChange-${haEntity.entity_id}`,
+        (state: string) => {},
+    );
+
     haMiddleware.subscribeToDevice(
         haEntity.entity_id,
         (event: StateChangedEvent) => {
-            LOGGER.info(`Event for device ${haEntity.entity_id}`);
+            logger.info(`Event for device ${haEntity.entity_id}`);
             const currentPosition =
                 event.data['new_state']?.attributes[
                     'current_position'
@@ -111,7 +116,7 @@ export const addWindowCover: AddHaDeviceToBridge = async (
             if (currentPosition === undefined) {
                 return;
             }
-            LOGGER.debug(JSON.stringify(event));
+            logger.debug(JSON.stringify(event));
             const validState =
                 event.data.new_state?.state === 'open' ||
                 event.data.new_state?.state === 'close';
@@ -135,11 +140,11 @@ export const addWindowCover: AddHaDeviceToBridge = async (
                                     targetPosition,
                             },
                         });
-                        LOGGER.debug(
+                        logger.debug(
                             shadeEndpoint.state.windowCovering,
                         );
                     } catch (error) {
-                        LOGGER.error(
+                        logger.error(
                             'Could not handle device set: ',
                             haEntity.entity_id,
                             'Error:',

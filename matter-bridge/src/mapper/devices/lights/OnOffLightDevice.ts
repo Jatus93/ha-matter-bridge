@@ -78,7 +78,7 @@ export const addOnOffLightDevice: AddHaDeviceToBridge = async (
         },
     );
 
-    const stateQueue = new StateQueue();
+    const stateQueue = new StateQueue(haEntity);
     const onOffFucntion = getOnOffFunction(
         logger,
         haEntity.entity_id,

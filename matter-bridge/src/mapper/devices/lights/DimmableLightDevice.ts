@@ -82,7 +82,7 @@ export const addDimmableLightDevice: AddHaDeviceToBridge = async (
         },
     );
 
-    const stateQueue = new StateQueue();
+    const stateQueue = new StateQueue(haEntity);
 
     const onOffFunction = getOnOffFunction(
         logger,

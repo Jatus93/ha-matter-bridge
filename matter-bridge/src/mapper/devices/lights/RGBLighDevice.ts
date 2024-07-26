@@ -23,7 +23,7 @@ export const addRGBLightDevice: AddHaDeviceToBridge = async (
     const logger = new Logger(`RGBLight ${haEntity.entity_id}`);
 
     const serialFromId = MD5(haEntity.entity_id).toString();
-    const stateQueue = new StateQueue();
+    const stateQueue = new StateQueue(haEntity);
     const endpoint = new Endpoint(
         ExtendedColorLightDevice.with(
             BridgedDeviceBasicInformationServer,

@@ -36,7 +36,7 @@ export const getSwitchDeviceQueue: AddHaDeviceToBridge = async (
         },
     );
 
-    const stateQueue = new StateQueue();
+    const stateQueue = new StateQueue(haEntity);
 
     endpoint.events.onOff.onOff$Changed.on((value, oldValue) => {
         logger.debug(
