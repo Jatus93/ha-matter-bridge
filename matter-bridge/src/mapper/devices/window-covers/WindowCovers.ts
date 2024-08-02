@@ -36,8 +36,6 @@ export const addWindowCover: AddHaDeviceToBridge = async (
         'PositionAwareLift',
     );
 
-    const stateQueue = new StateQueue(haEntity, haMiddleware, logger);
-
     class CustomWindowCoveringServer extends LiftingWindowCoveringServer {
         logger = new Logger(haEntity.entity_id.toUpperCase());
 
@@ -99,6 +97,19 @@ export const addWindowCover: AddHaDeviceToBridge = async (
             },
         },
     );
+
+    class WindowCoverQueue extends StateQueue<typeof shadeEndpoint> {
+        stateUpdateFunction(
+            stateChanged: boolean,
+            attributesChanged: boolean,
+            haEntity: HassEntity,
+        ): Promise<void> {
+            throw new Error('Method not implemented.');
+        }
+        setStateOnlineState(online: boolean): Promise<void> {
+            this.lastEntityState.state;
+        }
+    }
 
     stateQueue.on(
         `stateChange-${haEntity.entity_id}`,

@@ -6,19 +6,22 @@ import { HAMiddleware } from '@ha/HAmiddleware.js';
 import { Bridge } from '@matter/Bridge.js';
 import { sleep } from '@utils/utils.js';
 import { Logger } from '@project-chip/matter-node.js/log';
+import { Endpoint } from '@project-chip/matter.js/endpoint';
 
-export type AddHaDeviceToBridge = (
+export type AddHaDeviceToBridge<T extends Endpoint> = (
     haEntity: HassEntity,
     haMiddleware: HAMiddleware,
     bridge: Bridge,
-) => Promise<StateQueue>;
+) => Promise<T>;
 
 export { HAMiddleware };
 export { Bridge };
 
 const LOGGER = new Logger('MapperElement');
 
-export class StateQueue extends EventEmitter {
+export abstract class StateQueue<
+    T extends Endpoint,
+> extends EventEmitter {
     static readonly DEFAULT_SLEEP = 10;
     protected updatePending = false;
     protected dequeuing = false;
@@ -26,17 +29,20 @@ export class StateQueue extends EventEmitter {
     protected haMiddleware: HAMiddleware;
     protected logger: Logger;
     protected nextEntityState: HassEntity;
+    protected endpoint: T;
 
     private queue: (() => Promise<void>)[] = [];
 
     constructor(
         haEntity: HassEntity,
         haMiddleware: HAMiddleware,
+        endpoint: T,
         logger: Logger,
     ) {
         super();
         this.lastEntityState = haEntity;
         this.nextEntityState = haEntity;
+        this.endpoint = endpoint;
         this.haMiddleware = haMiddleware;
         this.logger = logger;
         this.on('newStateRequested', this.runUtilEmpty);
@@ -89,22 +95,34 @@ export class StateQueue extends EventEmitter {
         this.emit('newStateRequested');
     }
 
+    abstract stateUpdateFunction(
+        stateChanged: boolean,
+        attributesChanged: boolean,
+        haEntity: HassEntity,
+    ): Promise<void>;
+
+    abstract setStateOnlineState(online: boolean): Promise<void>;
+
     updateState(haEntity: HassEntity): void {
-        if (this.lastEntityState.state !== haEntity.state) {
-            this.emit(
-                `stateChange-${this.lastEntityState.entity_id}`,
-                haEntity.state,
+        this.addFunctionToQueue(async () => {
+            await this.setStateOnlineState(
+                haEntity.state === 'unavailable',
             );
-        }
-        if (
+        });
+
+        const stateChanged =
+            this.lastEntityState.state !== haEntity.state;
+
+        const attributesChanged =
             JSON.stringify(this.lastEntityState.attributes) !==
-            JSON.stringify(haEntity.attributes)
-        ) {
-            this.emit(
-                `attributesChange-${this.lastEntityState.entity_id}`,
-                haEntity.attributes,
+            JSON.stringify(haEntity.attributes);
+
+        this.addFunctionToQueue(async () => {
+            await this.stateUpdateFunction(
+                stateChanged,
+                attributesChanged,
+                haEntity,
             );
-        }
-        this.nextEntityState = haEntity;
+        });
     }
 }
