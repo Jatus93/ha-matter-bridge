@@ -76,6 +76,15 @@ export const getSwitchDeviceQueue: AddHaDeviceToBridge = async (
             logger.debug(`Event for device ${haEntity.entity_id}`);
             logger.debug(JSON.stringify(event));
             stateQueue.addFunctionToQueue(async () => {
+                await endpoint.set({
+                    bridgedDeviceBasicInformation: {
+                        reachable:
+                            event.data.new_state?.state ===
+                            'unavailable',
+                    },
+                });
+            });
+            stateQueue.addFunctionToQueue(async () => {
                 try {
                     await endpoint.set({
                         onOff: {

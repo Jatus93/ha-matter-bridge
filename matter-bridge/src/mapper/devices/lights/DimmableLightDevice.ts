@@ -106,7 +106,6 @@ export const addDimmableLightDevice: AddHaDeviceToBridge = async (
     haMiddleware.subscribeToDevice(
         haEntity.entity_id,
         (event: StateChangedEvent) => {
-            logger.debug(`Event for device ${haEntity.entity_id}`);
             logger.debug(JSON.stringify(event));
             let newBrightness: number = Number(
                 (event.data.new_state?.attributes as never)[
@@ -124,6 +123,15 @@ export const addDimmableLightDevice: AddHaDeviceToBridge = async (
             const currentLevel =
                 endpoint.state.levelControl.currentLevel;
 
+            stateQueue.addFunctionToQueue(async () => {
+                await endpoint.set({
+                    bridgedDeviceBasicInformation: {
+                        reachable:
+                            event.data.new_state?.state ===
+                            'unavailable',
+                    },
+                });
+            });
             stateQueue.addFunctionToQueue(async () => {
                 try {
                     if (
