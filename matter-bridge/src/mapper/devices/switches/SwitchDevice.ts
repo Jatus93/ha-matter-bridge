@@ -61,7 +61,7 @@ export const getSwitchDeviceQueue: AddHaDeviceToBridge = async (
             stateQueue.addFunctionToQueue(async () => {
                 try {
                     await haMiddleware.callAService(
-                        'socket',
+                        'switch',
                         value ? 'turn_on' : 'turn_off',
                         {
                             target: { entity_id: haEntity.entity_id },
