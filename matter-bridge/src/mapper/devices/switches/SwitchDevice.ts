@@ -1,3 +1,4 @@
+import '@project-chip/matter-node.js';
 import { OnOffPlugInUnitDevice } from '@project-chip/matter.js/devices/OnOffPlugInUnitDevice';
 import { BridgedDeviceBasicInformationServer } from '@project-chip/matter.js/behavior/definitions/bridged-device-basic-information';
 import { HassEntity, StateChangedEvent } from '@ha/HAssTypes.js';
@@ -29,13 +30,18 @@ export const getSwitchDeviceQueue: AddHaDeviceToBridge = async (
         {
             id: `switch-${serialFromId}`,
             bridgedDeviceBasicInformation: {
-                nodeLabel: haEntity.attributes['friendly_name'],
-                productName: haEntity.attributes['friendly_name'],
-                productLabel: haEntity.attributes['friendly_name'],
+                nodeLabel: haEntity.attributes[
+                    'friendly_name'
+                ]?.slice(0, 31),
+                productName: haEntity.attributes[
+                    'friendly_name'
+                ]?.slice(0, 31),
+                productLabel: haEntity.attributes[
+                    'friendly_name'
+                ]?.slice(0, 31),
                 reachable: true,
                 serialNumber: serialFromId,
             },
-            onOff: { onOff: haEntity.state === 'on' },
         },
     );
 

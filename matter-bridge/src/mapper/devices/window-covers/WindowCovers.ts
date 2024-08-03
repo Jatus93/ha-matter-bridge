@@ -3,7 +3,7 @@ import {
     WindowCoveringServer,
 } from '@project-chip/matter.js/behavior/definitions/window-covering';
 import { WindowCoveringDevice } from '@project-chip/matter.js/devices/WindowCoveringDevice';
-// import { WindowCovering } from '@project-chip/matter.js/cluster';
+import { BridgedDeviceBasicInformationServer } from '@project-chip/matter.js/behavior/definitions/bridged-device-basic-information';
 import { Endpoint } from '@project-chip/matter.js/endpoint';
 import { HassEntity, StateChangedEvent } from '@ha/HAssTypes.js';
 import {
@@ -82,9 +82,19 @@ export const addWindowCover: AddHaDeviceToBridge = async (
     }
 
     const shadeEndpoint = new Endpoint(
-        WindowCoveringDevice.with(CustomWindowCoveringServer),
+        WindowCoveringDevice.with(
+            CustomWindowCoveringServer,
+            BridgedDeviceBasicInformationServer,
+        ),
         {
             id: `ha-window-cover-${serialFromId}`,
+            bridgedDeviceBasicInformation: {
+                nodeLabel: haEntity.attributes['friendly_name'],
+                productName: haEntity.attributes['friendly_name'],
+                productLabel: haEntity.attributes['friendly_name'],
+                reachable: true,
+                serialNumber: serialFromId,
+            },
             windowCovering: {
                 configStatus: {
                     operational: true,

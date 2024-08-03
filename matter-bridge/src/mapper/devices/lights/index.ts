@@ -8,7 +8,7 @@ import {
 } from '../MapperType.js';
 import { addDimmableLightDevice } from './DimmableLightDevice.js';
 import { addOnOffLightDevice } from './OnOffLightDevice.js';
-// import { addRGBLightDevice } from './RGBLighDevice.js';
+import { addRGBLightDevice } from './RGBLightDevice.js';
 
 export * from './DimmableLightDevice.js';
 export * from './OnOffLightDevice.js';
@@ -18,7 +18,7 @@ const LOGGER = new Logger('Lights');
 const LIGHTS_MAP_FUNCTIONS: Map<string, AddHaDeviceToBridge> =
     new Map<string, AddHaDeviceToBridge>([
         ['onoff', addOnOffLightDevice],
-        ['rgb', addDimmableLightDevice],
+        ['rgb', addRGBLightDevice],
         ['brightness', addDimmableLightDevice],
     ]);
 
