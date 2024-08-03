@@ -10,7 +10,9 @@ import {
 } from '../MapperType.js';
 import { Logger } from '@project-chip/matter-node.js/log';
 import { Endpoint } from '@project-chip/matter.js/endpoint';
-import { MD5 } from 'crypto-js';
+
+import pkg from 'crypto-js';
+const { MD5 } = pkg;
 
 export const getSwitchDeviceQueue: AddHaDeviceToBridge = async (
     haEntity: HassEntity,
@@ -25,6 +27,7 @@ export const getSwitchDeviceQueue: AddHaDeviceToBridge = async (
             BridgedDeviceBasicInformationServer,
         ),
         {
+            id: `switch-${serialFromId}`,
             bridgedDeviceBasicInformation: {
                 nodeLabel: haEntity.attributes['friendly_name'],
                 productName: haEntity.attributes['friendly_name'],

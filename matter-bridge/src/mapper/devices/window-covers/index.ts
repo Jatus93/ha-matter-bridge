@@ -19,13 +19,13 @@ const WINDOW_COVERS_MAP: Map<string, StateQueue> = new Map<
     StateQueue
 >();
 
-export function setWindowCovers(
+export async function setWindowCovers(
     windowCovers: HassEntity[],
     haMiddleware: HAMiddleware,
     bridge: Bridge,
-) {
-    windowCovers.forEach(async (entity) => {
-        const key = 'cover';
+): Promise<void> {
+    for (const entity of windowCovers) {
+        const key = entity.entity_id.split('.')[0];
         const windoCoverFunction =
             WINDOW_COVERS_MAP_MAP_FUNCTIONS.get(key);
         if (!windoCoverFunction) {
@@ -35,5 +35,5 @@ export function setWindowCovers(
             entity.entity_id,
             await windoCoverFunction(entity, haMiddleware, bridge),
         );
-    });
+    }
 }

@@ -4,20 +4,20 @@ import { HassEntity } from '../home-assistant/HAssTypes.js';
 import { Bridge } from '../matter/Bridge.js';
 import { setLights } from './devices/lights/index.js';
 import { setWindowCovers } from './devices/window-covers/index.js';
-import { setSwitches } from './devices/switches/index.js';
+// import { setSwitches } from './devices/switches/index.js';
 
 const LOGGER = new Logger('Mapper');
-const entitiesToFunction = new Map<
-    string,
-    (
-        entities: HassEntity[],
-        haMiddleware: HAMiddleware,
-        bridge: Bridge,
-    ) => void
->([
+
+type SetterFunction = (
+    entities: HassEntity[],
+    haMiddleware: HAMiddleware,
+    bridge: Bridge,
+) => Promise<void>;
+
+const entitiesToFunction = new Map<string, SetterFunction>([
     ['light', setLights],
     ['cover', setWindowCovers],
-    ['switch', setSwitches],
+    // ['switch', setSwitches],
 ]);
 
 async function setHasEntities(
@@ -27,7 +27,7 @@ async function setHasEntities(
     const entities = await haMiddleware.getStatesPartitionedByType();
     LOGGER.info('Mapper init');
     const entityKeys = Object.keys(entities);
-    entityKeys.forEach((key) => {
+    for (const key of entityKeys) {
         LOGGER.info(
             'reading info ',
             entities[key].length,
@@ -43,9 +43,13 @@ async function setHasEntities(
         LOGGER.debug('Mapped key', entitiesToFunction.has(key));
         if (entitiesToFunction.has(key) && setEntitiesFunction) {
             LOGGER.info('adding', entities[key].length, key);
-            setEntitiesFunction(entities[key], haMiddleware, bridge);
+            await setEntitiesFunction(
+                entities[key],
+                haMiddleware,
+                bridge,
+            );
         }
-    });
+    }
 }
 
 export async function addAllDevicesToBridge(
@@ -53,5 +57,5 @@ export async function addAllDevicesToBridge(
     bridge: Bridge,
 ): Promise<void> {
     await setHasEntities(haMiddleware, bridge);
-    haMiddleware.subscribe();
+    await haMiddleware.subscribe();
 }

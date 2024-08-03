@@ -90,12 +90,6 @@ export const addWindowCover: AddHaDeviceToBridge = async (
                     operational: true,
                     liftPositionAware: true,
                 },
-                currentPositionLiftPercent100ths:
-                    (100 -
-                        Number(
-                            haEntity.attributes['current_position'],
-                        )) *
-                    100,
             },
         },
     );

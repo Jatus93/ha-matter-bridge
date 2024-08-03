@@ -29,22 +29,10 @@ export const addRGBLightDevice: AddHaDeviceToBridge = async (
             BridgedDeviceBasicInformationServer,
         ),
         {
-            bridgedDeviceBasicInformation: {
-                nodeLabel: haEntity.attributes['friendly_name'],
-                productName: haEntity.attributes['friendly_name'],
-                productLabel: haEntity.attributes['friendly_name'],
-                reachable: true,
-                serialNumber: serialFromId,
-            },
+            id: `rgb-light-${serialFromId}`,
         },
     );
 
-    endpoint.events.colorControl.colorMode$Changed.on(
-        (value, oldValue) => {
-            logger.debug(JSON.stringify(value, null, 4));
-            logger.debug(JSON.stringify(oldValue, null, 4));
-        },
-    );
     endpoint.events.onOff.onOff$Changed.on(
         getOnOffFunction(
             logger,

@@ -22,13 +22,13 @@ const SOCKET_MAP: Map<string, StateQueue> = new Map<
     StateQueue
 >();
 
-export function setSwitches(
+export async function setSwitches(
     windowCovers: HassEntity[],
     haMiddleware: HAMiddleware,
     bridge: Bridge,
-) {
-    windowCovers.forEach(async (entity) => {
-        const key = 'cover';
+): Promise<void> {
+    for (const entity of windowCovers) {
+        const key = entity.entity_id.split('.')[0];
         const socketDevice = SOCKET_MAP_FUNCTION.get(key);
         if (!socketDevice) {
             throw new Error('Missing ' + key);
@@ -37,5 +37,5 @@ export function setSwitches(
             entity.entity_id,
             await socketDevice(entity, haMiddleware, bridge),
         );
-    });
+    }
 }
