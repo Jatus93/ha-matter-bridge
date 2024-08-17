@@ -1,11 +1,19 @@
 -include .env
 export
 
-tsc:
-	yarn build
+export CONFIG_PATH=./config
+export DEVICES_FILE=confDevices.json
+export BRIDGE_LOCK=bridge.lck
+export PORT=2839
 
-run:
-	yarn start --storage-path=./config/deviceData
+build-service:
+	cd service && yarn build
 
-example:
-	node ./build/example.js
+run-service:
+	node ./service/build --storage-path=.${CONFIG_PATH}/deviceData
+
+build-web-ui:
+	cd web-ui && yarn build
+
+run-web-ui:
+	node ./web-ui/build &

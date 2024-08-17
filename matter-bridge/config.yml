@@ -8,6 +8,7 @@ arch:
     - amd64
 ports:
     5540/tcp: 5540
+    2839/tcp: 2839
 
 host_network: true
 hassio_role: homeassistant
@@ -16,4 +17,6 @@ homeassistant_api: true
 auth_api: true
 map:
     - addon_config:rw
+
+webui: http://[HOST]:[PORT:2839]/
 image: ghcr.io/jatus93/ha-matter-bridge

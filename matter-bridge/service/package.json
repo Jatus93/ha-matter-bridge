@@ -1,0 +1,47 @@
+{
+    "name": "@matter-bridge/service",
+    "main": "./build/index.js",
+    "type": "module",
+    "version": "0.7.3",
+    "scripts": {
+        "build": "tsc --project tsconfig.json && tsc-alias -p tsconfig.json",
+        "start": "node build",
+        "start-deamon": "nodemon ./build/index.js",
+        "stop-deamon": "nodemon --signal SIGINT ./build/index.js",
+        "lint": "eslint .",
+        "lint-fix": "eslint --fix .",
+        "commit": "./node_modules/.bin/git-cz",
+        "test-web": "ts-node src/web-server/index.ts"
+    },
+    "author": "",
+    "license": "GPL-3.0",
+    "dependencies": {
+        "@project-chip/matter-node.js": "^0.9.4",
+        "@types/node": "18.18",
+        "crypto-js": "^4.2.0",
+        "ws": "^8.18.0"
+    },
+    "devDependencies": {
+        "@eslint/eslintrc": "^3.1.0",
+        "@eslint/js": "^9.9.0",
+        "@types/crypto-js": "^4.2.2",
+        "@types/eslint": "^9.6.0",
+        "@types/express": "^4.17.21",
+        "@types/ws": "^8.5.10",
+        "eslint": "^9.9.0",
+        "eslint-config-prettier": "^9.1.0",
+        "eslint-plugin-prettier": "^5.2.1",
+        "forever": "^4.0.3",
+        "globals": "^15.9.0",
+        "prettier": "^3.3.3",
+        "ts-node": "^10.9.2",
+        "tsc-alias": "^1.8.10",
+        "typescript": "^5.5.4",
+        "typescript-eslint": "^8.2.0"
+    },
+    "config": {
+        "commitizen": {
+            "path": "cz-conventional-changelog"
+        }
+    }
+}

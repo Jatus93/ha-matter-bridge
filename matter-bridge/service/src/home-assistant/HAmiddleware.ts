@@ -6,10 +6,14 @@ import {
     MessageBase,
     BaseResponse,
     Event as HAEvent,
+    HassEntityLocal,
 } from './HAssTypes.js';
 
 import { WebSocket, RawData } from 'ws';
 import { TextDecoder } from 'util';
+
+import fs from 'fs/promises';
+import { existsSync } from 'fs';
 
 export class HAMiddleware {
     private lastMessageNumber = 1;
@@ -18,6 +22,9 @@ export class HAMiddleware {
     private logger = new Logger('HAMiddleware');
     private static instance: HAMiddleware;
     private entities: { [k: string]: HassEntity } = {};
+    private localConfiguredEntities: {
+        [k: string]: HassEntityLocal;
+    } = {};
     private functionsToCallOnChange: {
         [k: string]:
             | ((data: StateChangedEvent) => Promise<void> | void)
@@ -137,7 +144,7 @@ export class HAMiddleware {
         return this.entities;
     }
 
-    async getStatesPartitionedByType(): Promise<{
+    async getStatesPartitionedByType(filtered = false): Promise<{
         [k: string]: HassEntity[];
     }> {
         const states = await this.getStates();
@@ -148,13 +155,57 @@ export class HAMiddleware {
             if (!prev[key] && !Array.isArray(prev[key])) {
                 prev[key] = new Array<HassEntity>();
             }
-            prev[key].push(states[current]);
+            const currentEntity = states[current];
+            if (
+                filtered &&
+                this.localConfiguredEntities[currentEntity.entity_id]
+                    ?.visible
+            ) {
+                prev[key].push(states[current]);
+            }
             return prev;
         }, {});
         this.logger.debug(
             JSON.stringify({ getStatesPartitionedByType: toReturn }),
         );
         return toReturn;
+    }
+
+    private async loadLocalDevices(path = 'config/confDevices.json') {
+        const fileExtist = existsSync(path);
+        this.localConfiguredEntities = JSON.parse(
+            (
+                await fs.readFile(
+                    path,
+                    fileExtist
+                        ? undefined
+                        : {
+                              flag: 'w+',
+                          },
+                )
+            ).toString() || '{}',
+        ) as unknown as { [key: string]: HassEntityLocal };
+    }
+
+    public async updateLocalDevices(
+        path = 'config/confDevices.json',
+    ): Promise<void> {
+        await this.loadLocalDevices(path);
+        const states = await this.getStates();
+        for (const id of Object.keys(states)) {
+            if (!this.localConfiguredEntities[id]) {
+                this.localConfiguredEntities[id] = {
+                    id,
+                    custom_name:
+                        states[id].attributes['friendly_name'] || id,
+                    visible: false,
+                };
+            }
+        }
+        fs.writeFile(
+            path,
+            JSON.stringify(this.localConfiguredEntities),
+        );
     }
 
     async getServices() {

@@ -1,0 +1,7 @@
+node_modules
+**/*/deviceData
+**/*/config/*.json
+**/*/*.env
+**/build
+*.log
+**/*/example.ts

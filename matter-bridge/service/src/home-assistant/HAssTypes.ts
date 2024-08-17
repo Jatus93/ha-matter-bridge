@@ -5,6 +5,7 @@ export type Error = 1 | 2 | 3 | 4;
 
 export type UnsubscribeFunc = () => void;
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const messageTypeString = [
     'subscribe_trigger',
     'subscribe_events',
@@ -131,6 +132,13 @@ export type HassEntityAttributeBase = {
 
 export type HassEntity = HassEntityBase & {
     attributes: { [key: string]: unknown };
+};
+
+export type HassEntityLocal = {
+    visible: boolean;
+    custom_name: string;
+    id: string;
+    type?: string;
 };
 
 export type HassEntities = { [entity_id: string]: HassEntity };
