@@ -24,7 +24,7 @@ export async function GET(event: RequestEvent) {
 }
 
 export async function POST(event: RequestEvent) {
-	console.debug(JSON.stringify({ event }));
+	console.debug({ event });
 	const receivedElement = await event.request.json();
 	if (!isHassEntityLocal(receivedElement)) {
 		return { status: 400, body: 'invalid body' };
