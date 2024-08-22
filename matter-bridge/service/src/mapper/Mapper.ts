@@ -20,11 +20,14 @@ const entitiesToFunction = new Map<string, SetterFunction>([
     ['switch', setSwitches],
 ]);
 
+let total = 0;
+
 async function setHasEntities(
     haMiddleware: HAMiddleware,
     bridge: Bridge,
 ): Promise<void> {
-    const entities = await haMiddleware.getStatesPartitionedByType();
+    const entities =
+        await haMiddleware.getStatesPartitionedByType(true);
     LOGGER.info('Mapper init');
     const entityKeys = Object.keys(entities);
     for (const key of entityKeys) {
@@ -48,8 +51,11 @@ async function setHasEntities(
                 haMiddleware,
                 bridge,
             );
+            LOGGER.info(`Added ${entities[key].length} to ${key}`);
+            total += entities[key].length;
         }
     }
+    LOGGER.info(`Added ${total} devices`);
 }
 
 export async function addAllDevicesToBridge(

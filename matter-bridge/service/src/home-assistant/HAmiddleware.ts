@@ -13,7 +13,8 @@ import { WebSocket, RawData } from 'ws';
 import { TextDecoder } from 'util';
 
 import fs from 'fs/promises';
-import { existsSync } from 'fs';
+import { existsSync, mkdirSync, watchFile } from 'fs';
+import path from 'path';
 
 export class HAMiddleware {
     private lastMessageNumber = 1;
@@ -73,7 +74,7 @@ export class HAMiddleware {
                 const decoded = JSON.parse(
                     HAMiddleware.decoder.decode(data as Buffer),
                 ) as BaseResponse;
-                this.logger.debug('requestHandler', decoded);
+                // this.logger.debug('requestHandler', decoded);
                 if (decoded.id === message.id) {
                     this.ws.off('message', responseHandler);
                     return resolve(decoded);
@@ -162,6 +163,10 @@ export class HAMiddleware {
                     ?.visible
             ) {
                 prev[key].push(states[current]);
+                this.logger.debug(
+                    'added ',
+                    states[current]['entity_id'],
+                );
             }
             return prev;
         }, {});
@@ -171,12 +176,17 @@ export class HAMiddleware {
         return toReturn;
     }
 
-    private async loadLocalDevices(path = 'config/confDevices.json') {
-        const fileExtist = existsSync(path);
+    private async loadLocalDevices(
+        pathConfig = 'config/confDevices.json',
+    ) {
+        if (!existsSync(path.dirname(pathConfig))) {
+            mkdirSync(path.dirname(pathConfig));
+        }
+        const fileExtist = existsSync(pathConfig);
         this.localConfiguredEntities = JSON.parse(
             (
                 await fs.readFile(
-                    path,
+                    pathConfig,
                     fileExtist
                         ? undefined
                         : {
@@ -188,9 +198,9 @@ export class HAMiddleware {
     }
 
     public async updateLocalDevices(
-        path = 'config/confDevices.json',
+        pathConfig = 'config/confDevices.json',
     ): Promise<void> {
-        await this.loadLocalDevices(path);
+        await this.loadLocalDevices(pathConfig);
         const states = await this.getStates();
         for (const id of Object.keys(states)) {
             if (!this.localConfiguredEntities[id]) {
@@ -203,9 +213,13 @@ export class HAMiddleware {
             }
         }
         fs.writeFile(
-            path,
+            pathConfig,
             JSON.stringify(this.localConfiguredEntities),
         );
+        watchFile(pathConfig, { persistent: true }, async () => {
+            this.logger.info('Updated confDevices file, updating');
+            await this.loadLocalDevices(pathConfig);
+        });
     }
 
     async getServices() {

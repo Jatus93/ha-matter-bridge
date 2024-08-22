@@ -46,8 +46,8 @@ async function loadStatus(path: string) {
                           flag: 'w+',
                       },
             )
-        ).toString() || '{}',
-    );
+        ).toString() || '{"start": false}',
+    ) as { start: boolean };
     return result;
 }
 
@@ -56,9 +56,12 @@ async function run() {
     await HA_MIDDLEWARE.updateLocalDevices(
         `${getParameter('CONFIG_PATH')}/${getParameter('DEVICES_FILE')}`,
     );
-    loadStatus(
+    const { start } = await loadStatus(
         `${getParameter('CONFIG_PATH')}/${getParameter('BRIDGE_LOCK')}`,
     );
+    if (start) {
+        startBridge();
+    }
     watchFile(
         `${getParameter('CONFIG_PATH')}/${getParameter('BRIDGE_LOCK')}`,
         { persistent: true },
