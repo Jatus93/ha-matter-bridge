@@ -79,7 +79,7 @@
 						<input
 							type="checkbox"
 							name={entity.id + 'visible'}
-							bind:value={partitionedEntities[partition][index]['visible']}
+							bind:checked={partitionedEntities[partition][index].visible}
 						/>
 					</div>
 					<button

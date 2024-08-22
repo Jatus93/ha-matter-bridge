@@ -11,7 +11,6 @@ function isHassEntityLocal(data: object): data is HassEntityLocal {
 }
 
 export async function GET(event: RequestEvent) {
-	console.log(JSON.stringify(process.env, null, 4));
 	console.debug({ event });
 	const data = JSON.parse((await fs.readFile(`${basePath}/confDevices.json`)).toString()) as {
 		[key: string]: HassEntityLocal;

@@ -16,4 +16,4 @@ build-web-ui:
 	cd web-ui && yarn build
 
 run-web-ui:
-	node ./web-ui/build &
+	node ./web-ui/build
