@@ -206,8 +206,13 @@ export class HAMiddleware {
         const localKeys: string[] = Object.keys(
             this.localConfiguredEntities,
         );
-        for (const key in localKeys) {
-            if (key in stateKeys) {
+        this.logger.debug(
+            'Prune function',
+            localKeys.length,
+            stateKeys.length,
+        );
+        for (const key of localKeys) {
+            if (!(key in stateKeys)) {
                 localPrunedEntities[key] =
                     this.localConfiguredEntities[key];
             }
