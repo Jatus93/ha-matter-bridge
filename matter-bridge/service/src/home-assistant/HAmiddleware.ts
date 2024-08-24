@@ -197,6 +197,24 @@ export class HAMiddleware {
         ) as unknown as { [key: string]: HassEntityLocal };
     }
 
+    private pruneLocalDevices(states: {
+        [key: string]: HassEntity;
+    }): void {
+        const localPrunedEntities: { [k: string]: HassEntityLocal } =
+            {};
+        const stateKeys: string[] = Object.keys(states);
+        const localKeys: string[] = Object.keys(
+            this.localConfiguredEntities,
+        );
+        for (const key in localKeys) {
+            if (key in stateKeys) {
+                localPrunedEntities[key] =
+                    this.localConfiguredEntities[key];
+            }
+        }
+        this.localConfiguredEntities = localPrunedEntities;
+    }
+
     public async updateLocalDevices(
         pathConfig = 'config/confDevices.json',
     ): Promise<void> {
@@ -212,6 +230,7 @@ export class HAMiddleware {
                 };
             }
         }
+        this.pruneLocalDevices(states);
         fs.writeFile(
             pathConfig,
             JSON.stringify(this.localConfiguredEntities),
