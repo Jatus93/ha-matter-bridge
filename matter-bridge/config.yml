@@ -4,9 +4,6 @@ version: '1.1.0'
 slug: ha-matter-bridge
 description: This project serves as a proof of concept to connect HomeAssistant devices to Voice Assistants through the Matter Protocol.
 init: false
-ingress: true
-ingress_port: 2839
-ingreass_stream: true
 arch:
     - amd64
 ports:
@@ -20,7 +17,6 @@ homeassistant_api: true
 auth_api: true
 map:
     - addon_config:rw
-    - config:rw
 
 webui: http://[HOST]:[PORT:2839]/
 image: ghcr.io/jatus93/ha-matter-bridge
