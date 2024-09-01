@@ -1,6 +1,7 @@
 import '@project-chip/matter-node.js';
 import { OnOffPlugInUnitDevice } from '@project-chip/matter.js/devices/OnOffPlugInUnitDevice';
 import { BridgedDeviceBasicInformationServer } from '@project-chip/matter.js/behavior/definitions/bridged-device-basic-information';
+import { ScenesBehavior } from '@project-chip/matter.js/behavior/definitions/scenes';
 import { HassEntity, StateChangedEvent } from '@ha/HAssTypes.js';
 
 import {
@@ -22,28 +23,34 @@ export const getSwitchDeviceQueue: AddHaDeviceToBridge = async (
 ): Promise<StateQueue> => {
     const logger = new Logger(`SocketDevice ${haEntity.entity_id}`);
     const serialFromId = MD5(haEntity.entity_id).toString();
-
-    const endpoint = new Endpoint(
-        OnOffPlugInUnitDevice.with(
-            BridgedDeviceBasicInformationServer,
-        ),
-        {
-            id: `switch-${serialFromId}`,
-            bridgedDeviceBasicInformation: {
-                nodeLabel: haEntity.attributes[
-                    'friendly_name'
-                ]?.slice(0, 31),
-                productName: haEntity.attributes[
-                    'friendly_name'
-                ]?.slice(0, 31),
-                productLabel: haEntity.attributes[
-                    'friendly_name'
-                ]?.slice(0, 31),
-                reachable: true,
-                serialNumber: serialFromId,
-            },
-        },
+    let endpointType = OnOffPlugInUnitDevice.with(
+        BridgedDeviceBasicInformationServer,
     );
+    if (haEntity.entity_id.split('.')[0] === 'scene') {
+        endpointType = OnOffPlugInUnitDevice.with(
+            BridgedDeviceBasicInformationServer,
+            ScenesBehavior,
+        );
+    }
+    const endpoint = new Endpoint(endpointType, {
+        id: `switch-${serialFromId}`,
+        bridgedDeviceBasicInformation: {
+            nodeLabel: haEntity.attributes['friendly_name']?.slice(
+                0,
+                31,
+            ),
+            productName: haEntity.attributes['friendly_name']?.slice(
+                0,
+                31,
+            ),
+            productLabel: haEntity.attributes['friendly_name']?.slice(
+                0,
+                31,
+            ),
+            reachable: true,
+            serialNumber: serialFromId,
+        },
+    });
 
     const stateQueue = new StateQueue();
 

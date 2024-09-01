@@ -19,7 +19,7 @@ export { Bridge };
 const LOGGER = new Logger('MapperElement');
 
 export class StateQueue extends EventEmitter {
-    static readonly DEFAULT_SLEEP = 10;
+    static readonly DEFAULT_SLEEP = 500;
     protected updatePending = false;
     protected dequeuing = false;
 

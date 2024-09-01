@@ -18,6 +18,7 @@ const entitiesToFunction = new Map<string, SetterFunction>([
     ['light', setLights],
     ['cover', setWindowCovers],
     ['switch', setSwitches],
+    ['scene', setSwitches],
 ]);
 
 let total = 0;
